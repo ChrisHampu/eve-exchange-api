@@ -3,6 +3,7 @@ import sys
 import requests
 import rethinkdb as r
 from flask import Flask, request, abort, jsonify
+from flask_cors import CORS
 
 # Configuration
 etf_db = os.environ.get('ETF_DB', 'evetradeforecaster')
@@ -21,6 +22,7 @@ debug = False if env == 'production' else True
 
 # Application
 app = Flask(__name__)
+CORS(app)
 
 # Utilities to get connections to rethinkDB
 def getConnection():
