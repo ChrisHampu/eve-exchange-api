@@ -14,6 +14,7 @@ subscription_table = os.environ.get('ETF_SUBSCRIPTION_TABLE', 'subscription_ce23
 users_table = 'users'
 
 port = int(os.environ.get('ETF_API_PORT', 5000))
+verify_port = int(os.environ.get('VERIFY_PORT', 3001))
 env = os.environ.get('ETF_API_ENV', 'development')
 
 debug = False if env == 'production' else True
@@ -37,7 +38,7 @@ def verify_jwt(fn):
     if 'jwt' not in request.json:
       return jsonify({ 'error': "A 'jwt' field must be passed with a valid JSON Web Token for authentication", 'code': 400 })
 
-    res = requests.post('http://localhost:3001/verify', json={'jwt': request.json['jwt']})
+    res = requests.post('http://localhost:%s/verify' % verify_port, json={'jwt': request.json['jwt']})
 
     user = None
     doc = res.json()
