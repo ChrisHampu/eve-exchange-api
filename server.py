@@ -5,7 +5,6 @@ import rethinkdb as r
 from flask import Flask, request, abort, jsonify
 
 # Configuration
-secret_key = os.environ.get('JWT_SECRET')
 etf_db = os.environ.get('ETF_DB', 'evetradeforecaster')
 etf_host = os.environ.get('ETF_DB_HOST', 'localhost')
 etf_internal_db = os.environ.get('ETF_INTERNAL_DB', 'evetradeforecaster_internal')
@@ -13,10 +12,6 @@ etf_internal_db = os.environ.get('ETF_INTERNAL_DB', 'evetradeforecaster_internal
 settings_table = os.environ.get('ETF_SETTINGS_TABLE', 'user_settings_664c29459b15')
 subscription_table = os.environ.get('ETF_SUBSCRIPTION_TABLE', 'subscription_ce235ce22d6e')
 users_table = 'users'
-
-if secret_key == None:
-  print("JWT secret not set")
-  sys.exit(1)
 
 port = int(os.environ.get('ETF_API_PORT', 5000))
 env = os.environ.get('ETF_API_ENV', 'development')
