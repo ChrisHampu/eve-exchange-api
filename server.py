@@ -167,7 +167,7 @@ def not_found(error):
 
 @app.errorhandler(401)
 def not_found(error):
-  return jsonify({ 'error': "Failed to validate your authentication token or api key", 'code': 403 })
+  return jsonify({ 'error': "Failed to validate your authentication token or api key", 'code': 401 })
 
 @app.errorhandler(405)
 def not_found(error):
