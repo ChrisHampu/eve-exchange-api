@@ -3,6 +3,7 @@ import sys
 import requests
 import rethinkdb as r
 import redis
+import traceback
 from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
 from functools import wraps
@@ -78,6 +79,7 @@ def verify_jwt(fn):
       res = requests.post('http://localhost:%s/verify' % verify_port, json={'jwt': split[1]})
 
     except:
+      traceback.print_exc()
       return jsonify({ 'error': "Failed to parse authorization header", 'code': 400 })
 
     user = None
