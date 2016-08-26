@@ -4,7 +4,7 @@ import requests
 import rethinkdb as r
 import redis
 import traceback
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort, jsonify, current_app
 from flask_cors import CORS
 from functools import wraps
 
@@ -115,19 +115,7 @@ def verify_jwt(fn):
 # Routes
 @app.route('/', methods=['GET'])
 def index():
-  return jsonify({
-    'message': "EVE Trade Forecaster API v1",
-    'discovery': 'Endpoints are listed as relative to the current path. Parameterized endpoints require using the named parameter and type as the child path of the relevant endpoint.',
-    'endpoints': {
-      'subscription': {
-        'description': 'Actions relating to your EVE Trade Forecaster account',
-        'method': 'POST/GET',
-        'response': {
-          '$ref': 'endpoints'
-        }
-      }
-    }
-  })
+  return current_app.send_static_file('api.html')
 
 @app.route('/schemas', methods=['GET'])
 def schemas():
