@@ -29,7 +29,7 @@ CORS(app)
 re = None
 
 try:
-  re = redis.StrictRedis(host='localhost', port=6379, db=0)
+  re = redis.StrictRedis(host=etf_host, port=6379, db=0)
 except:
   print("Redis server is unavailable")
 
