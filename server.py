@@ -18,7 +18,7 @@ subscription_table = 'subscription_ce235ce22d6e'
 users_table = 'users'
 
 port = 5000
-verify_port = 3001
+verify_port = 4501
 env = os.environ.get('ETF_API_ENV', 'development')
 
 debug = False if env == 'production' else True
@@ -54,7 +54,7 @@ def verify_jwt(fn):
         if 'jwt' not in request.json:
           return jsonify({ 'error': "A 'jwt' field must be passed with a valid JSON Web Token for authentication", 'code': 400 })
 
-        res = requests.post('http://localhost:%s/verify' % verify_port, json={'jwt': request.json['jwt']})
+        res = requests.post('http://evetradeforecaster.com:%s/verify' % verify_port, json={'jwt': request.json['jwt']})
 
     except:
       pass
@@ -76,7 +76,7 @@ def verify_jwt(fn):
       if split[0] != "Token":
         return jsonify({ 'error': "Failed to parse authorization header", 'code': 400 })
 
-      res = requests.post('http://localhost:%s/verify' % verify_port, json={'jwt': split[1]})
+      res = requests.post('http://evetradeforecaster.com:%s/verify' % verify_port, json={'jwt': split[1]})
 
     except:
       traceback.print_exc()
@@ -225,7 +225,7 @@ def forecast(user_id, settings):
     pip.hgetall('dly:'+k.decode('ascii'))
 
   # Execute and grab only wanted attributes
-  docs = [{key:float(row[key]) for key in (b'type', b'spread', b'tradeVolume', b'buyFifthPercentile', b'spreadSMA', b'tradeVolumeSMA', b'sellFifthPercentile')} for row in pip.execute()]
+  docs = [{key.decode('ascii'):float(row[key]) for key in (b'type', b'spread', b'tradeVolume', b'buyFifthPercentile', b'spreadSMA', b'tradeVolumeSMA', b'sellFifthPercentile')} for row in pip.execute()]
 
   return jsonify(docs)
 
