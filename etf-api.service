@@ -1,12 +1,12 @@
-
 [Unit]
 Description=ETF API
 After=network.target
 
 [Service]
 Environment="ETF_API_ENV=production"
-Type=forking
-ExecStart=/usr/bin/python /home/ubuntu/eve-trade-forecaster-api/server.py
+Type=simple
+WorkingDirectory=/home/ubuntu/eve-trade-forecaster-api/
+ExecStart=/bin/sh -c '/usr/bin/python3 /home/ubuntu/eve-trade-forecaster-api/server.py > /home/ubuntu/eve-trade-forecaster-api/server.log 2>&1'
 PIDFile=/var/run/etf-api.pid
 TimeoutStopSec=0
 Restart=always
