@@ -46,6 +46,8 @@ def verify_jwt(fn):
   @wraps(fn)
   def wrapper(*args, **kwargs):
 
+    res = None
+
     if request.is_json == False:
       return jsonify({ 'error': "Request must be in json format", 'code': 400 })
 
@@ -59,27 +61,31 @@ def verify_jwt(fn):
     except:
       pass
 
-    try:
-      auth_header = request.headers.get('Authorization')
+    if res is None:
+      try:
+        auth_header = request.headers.get('Authorization')
 
-      if auth_header == None:
-        auth_header = request.headers.get('authorization')
+        if auth_header == None:
+          auth_header = request.headers.get('authorization')
 
-      if auth_header == None:
-        return jsonify({ 'error': "Authorization header is missing", 'code': 400 })
+        if auth_header == None:
+          return jsonify({ 'error': "Authorization header is missing", 'code': 400 })
 
-      split = auth_header.split(" ")
+        split = auth_header.split(" ")
 
-      if len(split) != 2:
+        if len(split) != 2:
+          return jsonify({ 'error': "Failed to parse authorization header", 'code': 400 })
+
+        if split[0] != "Token":
+          return jsonify({ 'error': "Failed to parse authorization header", 'code': 400 })
+
+        res = requests.post('http://evetradeforecaster.com:%s/verify' % verify_port, json={'jwt': split[1]})
+
+      except:
+        traceback.print_exc()
         return jsonify({ 'error': "Failed to parse authorization header", 'code': 400 })
 
-      if split[0] != "Token":
-        return jsonify({ 'error': "Failed to parse authorization header", 'code': 400 })
-
-      res = requests.post('http://evetradeforecaster.com:%s/verify' % verify_port, json={'jwt': split[1]})
-
-    except:
-      traceback.print_exc()
+    if res is None:
       return jsonify({ 'error': "Failed to parse authorization header", 'code': 400 })
 
     user = None
