@@ -1,0 +1,101 @@
+FORMAT: 1A
+HOST: http://api.evetradeforecaster.com/
+
+# EVE Trade Forecaster
+
+This API is designed for traders who wish to have more granular access to the ETF market dataset for exporting, or to remotely access special utilities related to their account.
+
+# EVE Trade Forecaster API Root [/]
+
+The root API will print out some basic metadata about the API, such as the list of root endpoints.
+
+## Retrieve the Entry Point [GET]
+
++ Response 200 (application/json)
+
+        {
+          'message': "EVE Trade Forecaster API"
+        }
+
+## Group Market
+
+Actions and resources related to market data.
+
+## Forecast [/market/forecast{&minspread,maxspread,minvolume,maxvolume,minprice,maxprice}]
+
++ Parameters
+    + minspread: 5 (number) Minimum spread percentage
+    + maxspread: 15 (number) Maximum spread percentage
+    + minvolume: 25 (number) Minimum traded volume
+    + maxvolume: 100 (number) Maximum traded volume
+    + minprice: 25000000 (number) Minimum buy price
+    + maxprice: 100000000 (number) Maximum buy price
+
+### Request a forecast of ideal trades based on the supplied parameters [GET]
+
+Returns an array of market data documents that meet the given parameters.
+At least one of each spread, volume, and price parameters must be set using either min, max, or both.
+
++ Response 200 (application/json)
+    + Attributes (array[Market Data])
+
+## 5 Minute History [/market/history/minutes/{typeid}]
+
++ Parameters
+    + typeid: 34 (number) Item type id for history request
+
+### Request market history at a 5 minute time resolution for a specific item [GET]
+
++ Response 200 (application/json)
+    + Attributes (array[Market Data])
+
+## Hourly History [/market/history/hourly/{typeid}]
+
++ Parameters
+    + typeid: 34 (number) Item type id for history request
+
+### Request market history at an hourly time resolution for a specific item [GET]
+
++ Response 200 (application/json)
+    + Attributes (array[Market Data])
+
+## Daily History [/market/history/daily/{typeid}]
+
++ Parameters
+    + typeid: 34 (number) Item type id for history request
+
+### Request market history at a daily time resolution for a specific item [GET]
+
++ Response 200 (application/json)
+    + Attributes (array[Market Data])
+
+## Group Subscription
+
+Actions and resources related to the users subscription.
+
+## Subscription Withdrawal [/subscription/withdraw/{amount}]
+
++ Parameters
+    + amount: 100000000 (required, number) - Amount in ISK that is requested for withdrawal
+
+### Request a withdrawal from the users subscription balance [POST]
+
++ Response 200 (application/json)
+
+        {
+            "message": 'Your withdrawal request has been submitted'
+        }
+
+## Data Structures
+
+### Market Data
++ tradeVolume: Approximated trade volume for the time period (number)
++ tradeVolumeSMA: Seven day moving average for volume, available only for daily history (number)
++ spread: Margin between buy & sell price (number)
++ spreadSMA: Seven day moving average for spread, available only for daily history (number)
++ buyFifthPercentile: Adjust buy price (number)
++ sellFifthPercentile: Adjust sell price (number)
++ time: Timestamp when document was created (number)
++ type: Type/item ID for this document (number)
++ high: Highest price for this time period (number)
++ low: Lowest price for this time period (number)
