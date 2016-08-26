@@ -73,6 +73,26 @@ At least one of each spread, volume, and price parameters must be set using eith
 
 Actions and resources related to the users subscription.
 
+## Subscribe [/subscription/subscribe]
+
+### Activate subscription using current balance [POST]
+
++ Response 200 (application/json)
+
+        {
+            "message": 'Your subscription status has been updated'
+        }
+
+## Unsubscribe [/subscription/unsubscribe]
+
+### Cancel active subscription [POST]
+
++ Response 200 (application/json)
+
+        {
+            "message": 'Your subscription status has been updated'
+        }
+
 ## Subscription Withdrawal [/subscription/withdraw/{amount}]
 
 + Parameters

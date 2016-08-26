@@ -106,6 +106,7 @@ def verify_jwt(fn):
       if len(user_settings) == 0:
         raise Exception()
     except:
+      traceback.print_exc()
       return jsonify({ 'error': "Failed to look up your user settings", 'code': 400 })
 
     return fn(user_id=user_id, settings=user_settings[0], *args, **kwargs)
@@ -231,6 +232,98 @@ def subscription():
     } 
   })
 
+@app.route('/subscription/subscribe', methods=['POST'])
+@verify_jwt
+def subscription_subscribe(user_id, settings):
+
+  subscription = None
+  cost = 150000000
+
+  try:
+    subscription = list(r.table(subscription_table).get_all([user_id], index='userID').limit(1).run(getConnection()))
+    if subscription is None or len(subscription) == 0:
+      raise Exception()
+    subscription = subscription[0]
+  except Exception:
+    return jsonify({ 'error': "Failed to look up your subscription status", 'code': 400 })
+
+  is_premium = subscription['premium']
+
+  if is_premium is not None:
+    if is_premium == True:
+      return jsonify({ 'error': "Your current subscription status is already premium", 'code': 400 })
+
+  balance = subscription['balance']
+
+  if cost > balance:
+   return jsonify({ 'error': "Insufficient balance", 'code': 400 })
+
+  try:
+    r.table(subscription_table).get(subscription['id']).update({
+      'balance': r.row['balance'] - cost,
+      'withdrawal_history': r.row['withdrawal_history'].append({
+        'time': r.now(),
+        'type': 1,
+        'amount': cost,
+        'description': 'Subscription fee',
+        'processed': True
+      }),
+      'premium': True,
+      'subscription_date': r.now()
+    }).run(getConnection())
+
+    r.table(users_table).filter({'user_id': user_id}).limit(1).update({'groups': r.branch(r.row["groups"].contains("premium"), r.row["groups"], r.row['groups'].append('premium'))}).run(getInternalConnection())
+
+  except Exception:
+    traceback.print_exc()
+    return jsonify({ 'error': "There was a database error while processing your subscription request. This should be reported", 'code': 400 })
+
+  return jsonify({ 'message': 'Your subscription status has been updated' })
+
+@app.route('/subscription/unsubscribe', methods=['POST'])
+@verify_jwt
+def subscription_unsubscribe(user_id, settings):
+
+  subscription = None
+
+  try:
+    subscription = list(r.table(subscription_table).get_all([user_id], index='userID').limit(1).run(getConnection()))
+    if subscription is None or len(subscription) == 0:
+      raise Exception()
+    subscription = subscription[0]
+  except Exception:
+    return jsonify({ 'error': "Failed to look up your subscription status", 'code': 400 })
+
+  is_premium = subscription['premium']
+
+  if is_premium is not None:
+    if is_premium == False:
+      return jsonify({ 'error': "Your current subscription status is not premium", 'code': 400 })
+
+  try:
+    r.table(subscription_table).get(subscription['id']).update({
+      'premium': False,
+      'subscription_date': None
+    }).run(getConnection())
+
+    active = list(r.table(users_table).filter({'user_id': user_id}).limit(1).run(getInternalConnection()))
+
+    if len(active) != 1:
+      return jsonify({ 'error': "Failed to look up your subscription status", 'code': 400 })
+
+    active = active[0]
+
+    if 'premium' in active['groups']:
+      active['groups'].remove('premium')
+
+    r.table(users_table).filter({'user_id': user_id}).limit(1).update({'groups': active['groups']}).run(getInternalConnection())
+
+  except Exception:
+    traceback.print_exc()
+    return jsonify({ 'error': "There was a database error while processing your subscription request. This should be reported", 'code': 400 })
+
+  return jsonify({ 'message': 'Your subscription status has been updated' })
+
 @app.route('/subscription/withdraw', methods=['POST'])
 def subscription_withdraw():
   return jsonify({
@@ -274,6 +367,7 @@ def subscription_withdraw_amount(amount, user_id, settings):
       })
     }).run(getConnection())
   except Exception:
+    traceback.print_exc()
     return jsonify({ 'error': "There was a database error while processing your withdrawal request. This should be reported", 'code': 400 })
 
   return jsonify({ 'message': 'Your withdrawal request has been submitted' })
