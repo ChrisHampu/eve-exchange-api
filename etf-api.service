@@ -1,0 +1,20 @@
+
+[Unit]
+Description=ETF API
+After=network.target
+
+[Service]
+Environment="ETF_API_ENV=production"
+Type=forking
+ExecStart=/usr/bin/python /home/ubuntu/eve-trade-forecaster-api/server.py
+PIDFile=/var/run/etf-api.pid
+TimeoutStopSec=0
+Restart=always
+User=ubuntu
+Group=ubuntu
+
+ExecStop=/bin/kill -s TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+Alias=etf-api.service

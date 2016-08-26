@@ -8,16 +8,16 @@ from flask_cors import CORS
 from functools import wraps
 
 # Configuration
-etf_db = os.environ.get('ETF_DB', 'evetradeforecaster')
-etf_host = os.environ.get('ETF_DB_HOST', '149.202.187.40')
-etf_internal_db = os.environ.get('ETF_INTERNAL_DB', 'evetradeforecaster_internal')
+etf_db = 'evetradeforecaster'
+etf_host = 'localhost'
+etf_internal_db = 'evetradeforecaster_internal'
 
-settings_table = os.environ.get('ETF_SETTINGS_TABLE', 'user_settings_664c29459b15')
-subscription_table = os.environ.get('ETF_SUBSCRIPTION_TABLE', 'subscription_ce235ce22d6e')
+settings_table = 'user_settings_664c29459b15'
+subscription_table = 'subscription_ce235ce22d6e'
 users_table = 'users'
 
-port = int(os.environ.get('ETF_API_PORT', 5000))
-verify_port = int(os.environ.get('VERIFY_PORT', 3001))
+port = 5000
+verify_port = 3001
 env = os.environ.get('ETF_API_ENV', 'development')
 
 debug = False if env == 'production' else True
