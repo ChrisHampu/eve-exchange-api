@@ -307,4 +307,4 @@ def not_found(error):
 
 # Start server
 if __name__ == '__main__':
-  app.run(debug=debug, port=port)
+  app.run(debug=debug, port=port, host='0.0.0.0')
