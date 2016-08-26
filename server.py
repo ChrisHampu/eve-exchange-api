@@ -267,7 +267,7 @@ def subscription_subscribe(user_id, settings):
   try:
     r.table(subscription_table).get(subscription['id']).update({
       'balance': r.row['balance'] - cost,
-      'withdrawal_history': r.row['withdrawal_history'].append({
+      'history': r.row['history'].append({
         'time': r.now(),
         'type': 1,
         'amount': cost,
@@ -364,7 +364,7 @@ def subscription_withdraw_amount(amount, user_id, settings):
   try:
     r.table(subscription_table).get(subscription['id']).update({
       'balance': r.row['balance'] - amount,
-      'withdrawal_history': r.row['withdrawal_history'].append({
+      'history': r.row['history'].append({
         'time': r.now(),
         'type': 1,
         'amount': amount,
