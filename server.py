@@ -205,7 +205,7 @@ def forecast(user_id, settings):
   pip = re.pipeline()
 
   for k in allkeys:
-    pip.hmget(k, ['type', 'spread', 'tradeVolume', 'buyFifthPercentile'])
+    pip.hmget(k, ['type', 'spreadSMA', 'tradeVolumeSMA', 'buyFifthPercentile'])
 
   docs = pip.execute()
 
