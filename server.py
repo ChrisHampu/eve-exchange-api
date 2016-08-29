@@ -210,7 +210,7 @@ def forecast(user_id, settings):
   docs = pip.execute()
 
   # Find ideal matches to query params
-  ideal = [doc[0] for doc in docs if float(doc[1]) >= minspread and float(doc[1]) <= maxspread and float(doc[2]) >= minvolume and float(doc[2]) <= maxvolume and float(doc[3]) >= minprice and float(doc[3]) <= maxprice ]
+  ideal = [doc[0] for doc in docs if doc[1] is not None and doc[2] is not None and doc[3] is not None and float(doc[1]) >= minspread and float(doc[1]) <= maxspread and float(doc[2]) >= minvolume and float(doc[2]) <= maxvolume and float(doc[3]) >= minprice and float(doc[3]) <= maxprice ]
 
   # Pull out complete documents for all ideal matches
 
