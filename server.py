@@ -250,7 +250,7 @@ def create_portfolio(user_id, settings):
   efficiency = 0
 
   if 'efficiency' in request.json:
-    efficieny = request.json['efficiency']
+    efficiency = request.json['efficiency']
 
   if isinstance(name, str) == False:
     return jsonify({ 'error': "Required parameter 'name' is not a valid string", 'code': 400 })
@@ -265,6 +265,9 @@ def create_portfolio(user_id, settings):
 
   if _type is not 0 and _type is not 1:
     return jsonify({ 'error': "Portfolio type must be 0 for Trading Portfolio or 1 for Industry Portfolio", 'code': 400 })
+
+  if efficiency < 0 or efficiency > 100:
+    return jsonify({ 'error': "Optional parameter 'efficiency' must be between 0 and 100", 'code': 400 })
 
   if _type == 1:
     if len(components) > 1:
