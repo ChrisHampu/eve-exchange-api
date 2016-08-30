@@ -69,6 +69,29 @@ At least one of each spread, volume, and price parameters must be set using eith
 + Response 200 (application/json)
     + Attributes (array[Market Data])
 
+## Group Portfolio
+
+Actions and resources related to portfolios.
+
+## Create [/portfolio/create]
+
+### Create a new portfolio [POST]
+
++ Request (application/json)
+
+    + Attributes
+        + name (string, required) - Name of the portfolio. Minimum 4 characters, maximum 32
+        + description (string) - Short description of the portfolio. maximum 100 characters
+        + type (number, required) - Type should be 0 for Trading Portfolio or 1 for Industry Portfolio
+        + components (array[Portfolio Component], required) - Components for this component. Only 1 manufacturable component can be used for an Industry Portfolio
+        + efficiency (number) - A percentage from 0 to 100 for the material efficiency used by the industry portfolio
+
++ Response 200 (application/json)
+
+        {
+            "message": 'Your new portfolio has been created with an id of 1'
+        }
+
 ## Group Subscription
 
 Actions and resources related to the users subscription.
@@ -119,3 +142,7 @@ Actions and resources related to the users subscription.
 + type: Type/item ID for this document (number)
 + high: Highest price for this time period (number)
 + low: Lowest price for this time period (number)
+
+### Portfolio Component
++ typeID: Item ID for the component (number)
++ quantity: Quantity of the component (number)
