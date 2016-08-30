@@ -220,6 +220,20 @@ def forecast(user_id, settings):
 
   return jsonify(docs)
 
+@app.route('/market/current/<int:typeid>', methods=['GET'])
+@verify_jwt
+def market_current(typeid, user_id, settings):
+
+  if isinstance(typeid, int) == False:
+    return jsonify({ 'error': "Required parameter 'typeID' is not a valid integer", 'code': 400 })
+
+  if re.exists('cur:'+str(typeid)) == False:
+    return jsonify({ 'error': "Failed to find current market data for the given typeID", 'code': 400 })
+
+  reDoc = re.hgetall('cur:'+str(typeid))
+
+  return jsonify({key.decode('ascii'):float(reDoc[key]) for key in (b'type', b'spread', b'tradeVolume', b'buyFifthPercentile', b'sellFifthPercentile')})
+
 @app.route('/portfolio/create', methods=['POST'])
 @verify_jwt
 def create_portfolio(user_id, settings):

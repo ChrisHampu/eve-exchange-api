@@ -37,7 +37,17 @@ Returns an array of market data documents that meet the given parameters.
 At least one of each spread, volume, and price parameters must be set using either min, max, or both.
 
 + Response 200 (application/json)
-    + Attributes (array[Market Data])
+    + Attributes (array[Daily Market Data])
+
+## Current [/market/current/{typeid}]
+
++ Parameters
+    + typeid: 34 (number) Item type id for current market data
+
+### Request the current market data for an item [GET]
+
++ Response 200 (application/json)
+    + Attributes (Current Market Data)
 
 ## 5 Minute History [/market/history/minutes/{typeid}]
 
@@ -131,7 +141,17 @@ Actions and resources related to the users subscription.
 
 ## Data Structures
 
-### Market Data
+### Current Market Data
++ tradeVolume: Approximated trade volume for the time period (number)
++ spread: Margin between buy & sell price (number)
++ buyFifthPercentile: Adjust buy price (number)
++ sellFifthPercentile: Adjust sell price (number)
++ time: Timestamp when document was created (number)
++ type: Type/item ID for this document (number)
++ high: Highest price for this time period (number)
++ low: Lowest price for this time period (number)
+
+### Daily Market Data
 + tradeVolume: Approximated trade volume for the time period (number)
 + tradeVolumeSMA: Seven day moving average for volume, available only for daily history (number)
 + spread: Margin between buy & sell price (number)
