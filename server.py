@@ -384,7 +384,8 @@ def create_portfolio(user_id, settings):
       'currentValue': 0,
       'averageSpread': 0,
       'industryQuantity': industryQuantity,
-      'industryTypeID': industryTypeID
+      'industryTypeID': industryTypeID,
+      'industryValue': 0
     }).run(getConnection())
     
   except:
