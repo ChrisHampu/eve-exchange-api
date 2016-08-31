@@ -293,6 +293,7 @@ def create_portfolio(user_id, settings):
   used_ids = []
   _components = []
   industryQuantity = 0
+  industryTypeID = 0
 
   try:
     if len(components) == 0:
@@ -348,6 +349,7 @@ def create_portfolio(user_id, settings):
         # Multiply the manufactured quantity by the quantiy of the component the user is tracking
         # So if its 5 missile blueprints that each manufacture 100, the total quantiy is 500
         industryQuantity = _blueprint['quantity'] * quantity
+        industryTypeID = typeID
 
   except:
     traceback.print_exc()
@@ -381,7 +383,8 @@ def create_portfolio(user_id, settings):
       'dailyChart': [],
       'currentValue': 0,
       'averageSpread': 0,
-      'industryQuantity': industryQuantity
+      'industryQuantity': industryQuantity,
+      'industryTypeID': industryTypeID
     }).run(getConnection())
     
   except:
