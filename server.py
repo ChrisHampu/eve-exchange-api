@@ -394,6 +394,28 @@ def create_portfolio(user_id, settings):
 
   return jsonify({ 'message': 'Your new portfolio has been created with an id of %s' % portfolioID })
 
+@app.route('/portfolio/delete/<int:id>', methods=['POST'])
+@verify_jwt
+def portfolio_delete(id, user_id, settings):
+
+  portfolio = None
+
+  try:
+    portfolio = list(r.table(portfolios_table).filter(lambda doc: (doc['userID'] == user_id) & (doc['portfolioID'] == id)).limit(1).run(getConnection()))
+    if portfolio is None or len(portfolio) == 0:
+      raise Exception()
+    portfolio = portfolio[0]
+  except Exception:
+    return jsonify({ 'error': "Failed to look up your portfolio. Double check that you have the correct portfolio ID", 'code': 400 })
+
+  try:
+    r.table(portfolios_table).filter(lambda doc: (doc['userID'] == user_id) & (doc['portfolioID'] == id)).limit(1).delete().run(getConnection())
+  except Exception:
+    traceback.print_exc()
+    return jsonify({ 'error': "There was a database error while processing your deletion request", 'code': 400 })
+
+  return jsonify({ 'message': 'Your portfolio has been deleted' })
+
 @app.route('/subscription', methods=['POST'])
 def subscription():
   return jsonify({
