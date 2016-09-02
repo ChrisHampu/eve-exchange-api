@@ -4,6 +4,7 @@ import requests
 import rethinkdb as r
 import redis
 import traceback
+import math
 from flask import Flask, request, abort, jsonify, current_app
 from flask_cors import CORS
 from functools import wraps
@@ -294,6 +295,7 @@ def create_portfolio(user_id, settings):
   _components = []
   industryQuantity = 0
   industryTypeID = 0
+  manufacturedQuantity = 0
 
   try:
     if len(components) == 0:
@@ -346,10 +348,17 @@ def create_portfolio(user_id, settings):
 
         _components = _blueprint['materials']
 
+        # Multiply the component requirements by the number of runs
+        # Also consider the material efficiency
+        for comp in _components:
+          comp['quantity'] = math.ceil(comp['quantity'] * quantity * ((100 - efficiency) / 100))
+
+        industryQuantity = quantity
+        industryTypeID = typeID
+
         # Multiply the manufactured quantity by the quantiy of the component the user is tracking
         # So if its 5 missile blueprints that each manufacture 100, the total quantiy is 500
-        industryQuantity = _blueprint['quantity'] * quantity
-        industryTypeID = typeID
+        manufacturedQuantity = _blueprint['quantity'] * quantity
 
   except:
     traceback.print_exc()
@@ -385,7 +394,9 @@ def create_portfolio(user_id, settings):
       'averageSpread': 0,
       'industryQuantity': industryQuantity,
       'industryTypeID': industryTypeID,
-      'industryValue': 0
+      'industryValue': 0,
+      'startingValue': 0,
+      'manufacturedQuantity': manufacturedQuantity
     }).run(getConnection())
     
   except:
