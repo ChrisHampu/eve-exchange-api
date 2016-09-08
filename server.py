@@ -13,9 +13,6 @@ from functools import wraps
 etf_db = 'evetradeforecaster'
 etf_host = 'localhost'
 
-settings_table = 'user_settings_664c29459b15'
-subscription_table = 'subscription_ce235ce22d6e'
-portfolios_table = 'portfolios_ba8351860e30'
 settings_table = 'user_settings'
 subscription_table = 'subscription'
 portfolios_table = 'portfolios'
@@ -87,8 +84,6 @@ def verify_jwt(fn):
     user = None
     doc = res.json()
 
-
-
     # failed to validate the jwt
     if 'error' in doc:
       abort(401)
@@ -106,7 +101,7 @@ def verify_jwt(fn):
     user_id = user['user_id']
 
     try:
-      user_settings = list(r.table(settings_table).get_all([user_id], index='userID').limit(1).run(getConnection()))
+      user_settings = list(r.table(settings_table).filter(lambda doc: doc['userID'] == user_id).limit(1).run(getConnection()))
       if len(user_settings) == 0:
         raise Exception()
     except:
