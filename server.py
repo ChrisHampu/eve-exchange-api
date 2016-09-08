@@ -12,11 +12,13 @@ from functools import wraps
 # Configuration
 etf_db = 'evetradeforecaster'
 etf_host = 'localhost'
-etf_internal_db = 'evetradeforecaster_internal'
 
 settings_table = 'user_settings_664c29459b15'
 subscription_table = 'subscription_ce235ce22d6e'
 portfolios_table = 'portfolios_ba8351860e30'
+settings_table = 'user_settings'
+subscription_table = 'subscription'
+portfolios_table = 'portfolios'
 users_table = 'users'
 
 portfolio_limit = 10 # Max number of portfolios a user can have
@@ -44,9 +46,6 @@ except:
 # Utilities to get connections to rethinkDB
 def getConnection():
   return r.connect(db=etf_db, host=etf_host)
-
-def getInternalConnection():
-  return r.connect(db=etf_internal_db, host=etf_host)
 
 # Decorator to validate a JWT and retrieve the users info from rethinkDB
 def verify_jwt(fn):
@@ -88,6 +87,8 @@ def verify_jwt(fn):
     user = None
     doc = res.json()
 
+
+
     # failed to validate the jwt
     if 'error' in doc:
       abort(401)
@@ -96,7 +97,7 @@ def verify_jwt(fn):
     doc_id = jwt['id']
 
     try:
-      user = r.table(users_table).get(doc_id).run(getInternalConnection())
+      user = r.table(users_table).get(doc_id).run(getConnection())
       if user is None:
         raise Exception()
     except:
@@ -482,7 +483,7 @@ def subscription_subscribe(user_id, settings):
       'subscription_date': r.now()
     }).run(getConnection())
 
-    r.table(users_table).filter({'user_id': user_id}).limit(1).update({'groups': r.branch(r.row["groups"].contains("premium"), r.row["groups"], r.row['groups'].append('premium'))}).run(getInternalConnection())
+    r.table(users_table).filter({'user_id': user_id}).limit(1).update({'groups': r.branch(r.row["groups"].contains("premium"), r.row["groups"], r.row['groups'].append('premium'))}).run(getConnection())
 
   except Exception:
     traceback.print_exc()
@@ -516,7 +517,7 @@ def subscription_unsubscribe(user_id, settings):
       'subscription_date': None
     }).run(getConnection())
 
-    active = list(r.table(users_table).filter({'user_id': user_id}).limit(1).run(getInternalConnection()))
+    active = list(r.table(users_table).filter({'user_id': user_id}).limit(1).run(getConnection()))
 
     if len(active) != 1:
       return jsonify({ 'error': "Failed to look up your subscription status", 'code': 400 })
@@ -526,7 +527,7 @@ def subscription_unsubscribe(user_id, settings):
     if 'premium' in active['groups']:
       active['groups'].remove('premium')
 
-    r.table(users_table).filter({'user_id': user_id}).limit(1).update({'groups': active['groups']}).run(getInternalConnection())
+    r.table(users_table).filter({'user_id': user_id}).limit(1).update({'groups': active['groups']}).run(getConnection())
 
   except Exception:
     traceback.print_exc()
