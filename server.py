@@ -445,7 +445,7 @@ def subscription_subscribe(user_id, settings):
   cost = 150000000
 
   try:
-    subscription = list(r.table(subscription_table).get_all([user_id], index='userID').limit(1).run(getConnection()))
+    subscription = list(r.table(subscription_table).filter(lambda doc: doc['userID'] == user_id).limit(1).run(getConnection()))
     if subscription is None or len(subscription) == 0:
       raise Exception()
     subscription = subscription[0]
@@ -493,7 +493,7 @@ def subscription_unsubscribe(user_id, settings):
   subscription = None
 
   try:
-    subscription = list(r.table(subscription_table).get_all([user_id], index='userID').limit(1).run(getConnection()))
+    subscription = list(r.table(subscription_table).filter(lambda doc: doc['userID'] == user_id).limit(1).run(getConnection()))
     if subscription is None or len(subscription) == 0:
       raise Exception()
     subscription = subscription[0]
@@ -549,7 +549,7 @@ def subscription_withdraw_amount(amount, user_id, settings):
   subscription = None
 
   try:
-    subscription = list(r.table(subscription_table).get_all([user_id], index='userID').limit(1).run(getConnection()))
+    subscription = list(r.table(subscription_table).filter(lambda doc: doc['userID'] == user_id).limit(1).run(getConnection()))
     if subscription is None or len(subscription) == 0:
       raise Exception()
     subscription = subscription[0]
