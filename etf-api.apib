@@ -203,7 +203,7 @@ Actions and resources related to the users subscription.
 ### Market Group Child
 + name: Group name (string)
 + id: Group ID (string)
-+ childGroups: (array)
++ childGroups: (array[object])
 + items: (array[Item])
 
 ### Market Group
@@ -216,6 +216,8 @@ Actions and resources related to the users subscription.
 + typeID: ID for this item (number)
 
 ### Blueprint
-+ materials: List of required materials (array[Material])
++ materials: List of required materials (array[])
+    + quantity: Number of this item required (number)
+    + typeID: ID for this item (number)
 + quantity: Number of this item that is manufactured from the blueprint (number)
 + name: Name of the manufactured item (string)
