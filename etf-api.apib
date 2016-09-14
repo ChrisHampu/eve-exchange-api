@@ -152,6 +152,22 @@ Actions and resources related to the users subscription.
             "message": 'Your withdrawal request has been submitted'
         }
 
+## SDE
+
+## Market Groups [/sde/marketgroups]
+
+### Get market group data [GET]
+
++ Response 200 (application/json)
+    + Attributes (array[Market Group])
+
+## Blueprints [/sde/blueprints]
+
+### Get blueprint data [GET]
+
++ Response 200 (application/json)
+    + Attributes (object(Blueprint))
+
 ## Data Structures
 
 ### Current Market Data
@@ -179,3 +195,22 @@ Actions and resources related to the users subscription.
 ### Portfolio Component
 + typeID: Item ID for the component (number)
 + quantity: Quantity of the component (number)
+
+### Item
++ id: Item type ID (number)
++ name: Item name (number)
+
+### Market Group
++ name: Group name (string)
++ id: Group ID (string)
++ childGroups: (array[Market Group])
++ items: (array[Item])
+
+### Material
++ quantity: Number of this item required (number)
++ typeID: ID for this item (number)
+
+### Blueprint
++ materials: List of required materials (array(Material))
++ quantity: Number of this item that is manufactured from the blueprint (number)
++ name: Name of the manufactured item (string)
