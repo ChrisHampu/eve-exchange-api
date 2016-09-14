@@ -152,7 +152,7 @@ Actions and resources related to the users subscription.
             "message": 'Your withdrawal request has been submitted'
         }
 
-## SDE
+## Group SDE
 
 ## Market Groups [/sde/marketgroups]
 
@@ -166,7 +166,7 @@ Actions and resources related to the users subscription.
 ### Get blueprint data [GET]
 
 + Response 200 (application/json)
-    + Attributes (object(Blueprint))
+    + Attributes (Blueprint)
 
 ## Data Structures
 
@@ -200,11 +200,16 @@ Actions and resources related to the users subscription.
 + id: Item type ID (number)
 + name: Item name (number)
 
+### Market Group Child
++ name: Group name (string)
++ id: Group ID (string)
++ childGroups: (array)
++ items: (array[Item])
+
 ### Market Group
 + name: Group name (string)
 + id: Group ID (string)
-+ childGroups: (array[Market Group])
-+ items: (array[Item])
++ childGroups: (array[Market Group Child])
 
 ### Material
 + quantity: Number of this item required (number)
