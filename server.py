@@ -369,12 +369,10 @@ def create_portfolio(user_id, settings):
 
         _blueprint = blueprints[str(typeID)]
 
-        _components = _blueprint['materials']
-
         # Multiply the component requirements by the number of runs
         # Also consider the material efficiency
-        for comp in _components:
-          comp['quantity'] = math.ceil(comp['quantity'] * quantity * ((100.0 - efficiency) / 100.0))
+        for comp in _blueprint['materials']:
+          _components.append({'typeID': comp['typeID'], 'quantity':  math.ceil(comp['quantity'] * quantity * ((100.0 - efficiency) / 100.0))})
 
         industryQuantity = quantity
         industryTypeID = typeID
