@@ -374,7 +374,7 @@ def create_portfolio(user_id, settings):
         # Multiply the component requirements by the number of runs
         # Also consider the material efficiency
         for comp in _components:
-          comp['quantity'] = math.ceil(comp['quantity'] * quantity * ((100 - efficiency) / 100))
+          comp['quantity'] = math.ceil(comp['quantity'] * quantity * ((100.0 - efficiency) / 100.0))
 
         industryQuantity = quantity
         industryTypeID = typeID
