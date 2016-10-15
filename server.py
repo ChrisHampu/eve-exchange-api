@@ -755,7 +755,8 @@ def insert_defaults(user_id, user_name):
         'user_id': user_id,
         'user_name': user_name,
         'admin': False,
-        'last_online': datetime.now()
+        'last_online': datetime.now(),
+        'join_date': datetime.now()
     }
 
     settings_doc = {
@@ -811,7 +812,7 @@ def insert_defaults(user_id, user_name):
         "user_id": user_id,
         "time": datetime.utcnow(),
         "read": False,
-        "message": "Welcome to the EVE Trade Forecaster Beta. Please report any problems you find"
+        "message": "Welcome to the EVE Trade Forecaster Beta! Please report any problems you find."
     }
 
     mongo_db.users.insert(user_doc)
@@ -820,6 +821,9 @@ def insert_defaults(user_id, user_name):
     mongo_db.profit_top_items.insert(profit_items)
     mongo_db.subscription.insert(subscription_doc)
     mongo_db.notifications.insert(beta_notification)
+
+    # Publish the new account creation
+    requests.post('http://localhost:4501/publish/subscription/%s' % user_id, timeout=1)
 
     return user_doc, settings_doc
 
