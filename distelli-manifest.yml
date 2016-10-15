@@ -6,6 +6,6 @@ champu/EVE-Exchange-API:
     - '*'
   PostInstall:
     - pip3 install -r requirements.txt
-    - node /usr/local/lib/node_modules/aglio/bin/aglio.js --theme-variables slate -i etf-api.apib -o static/api.html
+    - nodejs /usr/local/lib/node_modules/aglio/bin/aglio.js --theme-variables slate -i etf-api.apib -o static/api.html
   Exec:
     - python3 server.py
