@@ -21,7 +21,7 @@ redirect_host = os.environ.get('ETF_API_OAUTH_REDIRECT', 'http://localhost:3000'
 
 mongo_client = MongoClient()
 
-mongo_db = mongo_client.evetradeforecaster
+mongo_db = mongo_client.eveexchange
 
 settings_collection = mongo_db.settings
 portfolio_collection = mongo_db.portfolios
