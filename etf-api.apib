@@ -152,6 +152,44 @@ Actions and resources related to the users subscription.
             "message": 'Your withdrawal request has been submitted'
         }
 
+## Group Notification
+
+## Mark as read [/notification/{id}/read]
+
++ Parameters
+    + id: 57fecb8e533fadda411ce082 (required, string) - Notification unique id
+
+### Mark a single notification as read [POST]
+
++ Response 200 (application/json)
+
+        {
+            "message": 'Notificaton status is updated'
+        }
+
+## Mark as unread [/notification/{id}/unread]
+
++ Parameters
+    + id: 57fecb8e533fadda411ce082 (required, string) - Notification unique id
+
+### Mark a single notification as unread [POST]
+
++ Response 200 (application/json)
+
+        {
+            "message": 'Notificaton status is updated'
+        }
+
+## Mark all as read [/notification/all/read]
+
+### Mark all unread notificatons as read [POST]
+
++ Response 200 (application/json)
+
+        {
+            "message": 'Notificaton statuses are updated'
+        }
+
 ## Group SDE
 
 ## Market Groups [/sde/marketgroups]
@@ -216,8 +254,6 @@ Actions and resources related to the users subscription.
 + typeID: ID for this item (number)
 
 ### Blueprint
-+ materials: List of required materials (array[])
-    + quantity: Number of this item required (number)
-    + typeID: ID for this item (number)
++ materials: List of required materials (array[Material])
 + quantity: Number of this item that is manufactured from the blueprint (number)
 + name: Name of the manufactured item (string)
