@@ -155,7 +155,7 @@ def index():
 @app.route('/schemas', methods=['GET'])
 def schemas():
     return jsonify({
-        'message': "EVE Trade Forecaster API"
+        'message': "EVE Exchange API"
     })
 
 @app.route('/market/forecast/', methods=['GET'])
@@ -396,7 +396,7 @@ def create_portfolio(user_id, settings):
     userPortfolioCount = portfolio_collection.find({'user_id': user_id}).count()
 
     if userPortfolioCount >= portfolio_limit:
-        return jsonify({ 'error': "There is a limit of %s portfolios that a user can create. If you need this limit raised, contact an EVE Trade Forecaster admin." % portfolio_limit, 'code': 400 })
+        return jsonify({ 'error': "There is a limit of %s portfolios that a user can create. If you need this limit raised, contact an EVE Exchange admin." % portfolio_limit, 'code': 400 })
 
     try:
         portfolioCount = portfolio_collection.find().count()
@@ -464,7 +464,7 @@ def subscription():
     return jsonify({
         'endpoints': {
             'withdraw': {
-                'description': 'Actions relating to your EVE Trade Forecaster account',
+                'description': 'Actions relating to your EVE Exchange account',
                 'method': 'POST',
                 'response': {
                     '$ref': 'endpoints'
@@ -580,7 +580,7 @@ def subscription_withdraw():
     return jsonify({
         'endpoints': {
             '<int:amount>': {
-                'description': 'Request a withdrawal of "amount" from your EVE Trade Forecaster balance',
+                'description': 'Request a withdrawal of "amount" from your EVE Exchange balance',
                 'method': 'POST',
                 'response': 'message'
             }
@@ -812,7 +812,7 @@ def insert_defaults(user_id, user_name):
         "user_id": user_id,
         "time": datetime.utcnow(),
         "read": False,
-        "message": "Welcome to the EVE Trade Forecaster Beta! Please report any problems you find."
+        "message": "Welcome to the EVE Exchange! Please report any problems you find."
     }
 
     mongo_db.users.insert(user_doc)
