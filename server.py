@@ -37,6 +37,8 @@ env = os.environ.get('ETF_API_ENV', 'development')
 debug = False if env == 'production' else True
 
 auth_jwt_secret = 'development' if debug else os.environ.get('ETF_API_JWT_SECRET', 'production')
+
+# Use to connect to private backend publishing API
 admin_secret = os.environ.get('ETF_API_ADMIN_SECRET', 'admin_secret')
 
 # Application
