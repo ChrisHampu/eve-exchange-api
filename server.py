@@ -14,6 +14,11 @@ from pymongo import MongoClient, DESCENDING
 from bson import ObjectId
 from functools import wraps
 
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
+
 # Configuration
 etf_host = 'localhost'
 redis_host = 'localhost'
@@ -677,6 +682,232 @@ def notification_set_unread(not_id, user_id, settings):
 
     return jsonify({ 'message': 'Notification status is updated' })
 
+# API Keys
+
+@app.route('/apikey/add', methods=['POST'])
+@verify_jwt
+def apikey_add(user_id, settings):
+
+    if request.is_json == False:
+        return jsonify({ 'error': "Request must be in json format", 'code': 400 })
+
+    try:
+        if request.json is None:
+            return jsonify({ 'error': "Request must be in json format", 'code': 400 })
+
+    except:
+        return jsonify({ 'error': "There was a problem parsing your json request", 'code': 400 })
+
+    if 'type' not in request.json:
+        return jsonify({ 'error': "Required parameter 'type' is missing", 'code': 400 })
+    if 'keyID' not in request.json:
+        return jsonify({ 'error': "Required parameter 'keyID' is missing", 'code': 400 })
+    if 'vCode' not in request.json:
+        return jsonify({ 'error': "Required parameter 'vCode' is missing", 'code': 400 })
+
+    keyID = request.json['keyID']
+    vCode = request.json['vCode']
+    type = request.json['type']
+
+    if isinstance(keyID, str) == False:
+        return jsonify({ 'error': "Required parameter 'keyID' is not a valid string", 'code': 400 })
+    if isinstance(vCode, str) == False:
+        return jsonify({ 'error': "Required parameter 'vCode' is not a valid string", 'code': 400 })
+    if isinstance(type, int) == False:
+        return jsonify({ 'error': "Required parameter 'type' is not a valid integer", 'code': 400 })
+
+    if type is not 0 and type is not 1:
+        return jsonify({ 'error': "type must be 0 for character key or 1 for corporation key", 'code': 400 })
+
+    if type == 0 and 'characterID' not in request.json:
+        return jsonify({ 'error': "Required parameter 'characterID' is missing", 'code': 400 })
+    elif type == 0:
+        characterID = request.json['characterID']
+
+        if isinstance(characterID, int) == False:
+            return jsonify({'error': "Required parameter 'characterID' is not a valid integer", 'code': 400})
+    else:
+        characterID = 0
+
+    if type == 1 and 'walletKey' not in request.json:
+        return jsonify({'error': "Required parameter 'walletKey' is missing", 'code': 400})
+    elif type == 1:
+        walletKey = request.json['walletKey']
+
+        if isinstance(walletKey, int) == False:
+            return jsonify({'error': "Required parameter 'walletKey' is not a valid integer", 'code': 400})
+
+        if walletKey < 1000 or walletKey > 1006:
+            return jsonify({'error': "Corporation wallet division key must be 1000 - 1006", 'code': 400})
+    else:
+        walletKey = 0
+
+    characterName = ""
+    corporationID = 0
+    corporationName = ""
+
+    # Grab key info from EVE and verify it matches
+    try:
+        res = requests.get('https://api.eveonline.com/account/APIKeyInfo.xml.aspx?keyID=%s&vCode=%s' % (keyID, vCode), timeout=10)
+
+        tree = ET.fromstring(res.text)
+
+        if tree.find('error') is not None:
+            raise Exception()
+
+        keyResult = tree.find('result').find('key')
+        rows = list(keyResult.find('rowset'))
+
+        # TODO: Check expiry & correct corp mask
+        if type == 0:
+            if keyResult.attrib['type'] != "Character" and keyResult.attrib['type'] != "Account":
+                return jsonify({'error': "Failed to verify that this key is the correct type of 'Character' or 'Account'", 'code': 400})
+            #if keyResult.attrib['accessMask'] != "23072779":
+            #    return jsonify({'error': "Failed to verify that the access mask is 23072779", 'code': 400})
+            found = False
+            for row in rows:
+                if row.attrib['characterID'] == str(characterID):
+                    found = True
+                    characterName = row.attrib['characterName']
+                    corporationName = row.attrib['corporationName']
+                    corporationID = 0 if row.attrib['corporationID'] == "0" else row.attrib['corporationID']
+                    break
+            if found is False:
+                return jsonify({'error': "The requested characterID is not associated with this api key", 'code': 400})
+        else:
+            if keyResult.attrib['type'] != "Corporation":
+                return jsonify({'error': "Failed to verify that this key is the correct type of 'Corporation'", 'code': 400})
+            if keyResult.attrib['accessMask'] != "3149835":
+                return jsonify({'error': "Failed to verify that the access mask is 3149835", 'code': 400})
+            row = rows[0] # there is only 1 entry in this case
+            characterID = row.attrib['characterID']
+            characterName = row.attrib['characterName']
+            corporationName = row.attrib['corporationName']
+            corporationID = row.attrib['corporationID']
+
+    except:
+        traceback.print_exc()
+        return jsonify({'error': "Failed to verify the given keyID and vCode", 'code': 400})
+
+    # Verify that the api key the user is adding does not already exist
+    if 'profiles' not in settings:
+        return jsonify({'error': "Your account is not set up yet to accept API keys. Try re-logging into the website or report this to Maxim Stride", 'code': 400})
+
+    for key in settings['profiles']:
+
+        if keyID == key['key_id'] and vCode == key['vcode']:
+            return jsonify({'error': "The given api key is already attached to your account", 'code': 400})
+
+        if type == 0:
+            if characterID == key['character_id']:
+                return jsonify({'error': "The given character already has an API key on your account", 'code': 400})
+        else:
+            if corporationID == key['corporation_id']:
+                return jsonify({'error': "The given corporation already has an API key on your account", 'code': 400})
+
+    # Sanity checks
+    if characterID is 0:
+        return jsonify({'error': "There was an unknown problem grabbing the correct information for this api key", 'code': 400})
+
+    # Add api key to account now
+    settings_collection.find_and_modify({'user_id': user_id}, {
+            '$push': {
+                'profiles': {
+                    'type': type,
+                    'key_id': keyID,
+                    'vcode': vCode,
+                    'character_id': characterID,
+                    'character_name': characterName,
+                    'corporation_id': corporationID,
+                    'corporation_name': corporationName,
+                    'wallet_balance': 0,
+                    'wallet_key': walletKey,
+                    'id': str(ObjectId()) # unique ID to be used by api's
+                }
+            }
+    })
+
+    try:
+        requests.post('http://localhost:4501/publish/settings/%s' % user_id, timeout=1)
+    except:
+        traceback.print_exc()
+
+    return jsonify({'message': 'API key has been added to your account'})
+
+@app.route('/apikey/remove/<string:key_id>', methods=['GET', 'POST'])
+@verify_jwt
+def apikey_remove(key_id, user_id, settings):
+
+    if isinstance(key_id, str) == False:
+        return jsonify({ 'error': "Required parameter 'id' is not a valid string", 'code': 400 })
+
+    # Verify that the api key the user is adding does not already exist
+    if 'profiles' not in settings:
+        return jsonify({'error': "Your account is not set up yet to accept API keys. Try re-logging into the website or report this to Maxim Stride", 'code': 400})
+
+    found = False
+
+    # Verify the requested key exists
+    try:
+        for key in settings['profiles']:
+            if 'id' in key and key_id == key['id']:
+                found = True
+
+    except:
+        return jsonify({'message': 'There was a problem removing the API key. Please report this to Maxim Stride'})
+
+    if not found:
+        return jsonify({'message': 'Failed to find the requested API key. Make sure to use its unique ID in the request'})
+
+    # Query to remove the exact array element
+    settings_collection.find_and_modify({'user_id': user_id}, {
+            '$pull': {
+                'profiles': {
+                    'id': key_id
+                }
+            }
+    })
+
+    try:
+        requests.post('http://localhost:4501/publish/settings/%s' % user_id, timeout=1)
+    except:
+        traceback.print_exc()
+
+    return jsonify({'message': 'API key has been removed from your account'})
+
+@app.route('/apikey/get', methods=['GET', 'POST'])
+@verify_jwt
+def apikey_get_all(user_id, settings):
+
+    # Verify that the api key the user is adding does not already exist
+    if 'profiles' not in settings:
+        return jsonify({'error': "Your account is not set up yet to accept API keys. Try re-logging into the website or report this to Maxim Stride", 'code': 400})
+
+    return jsonify(settings['profiles'])
+
+@app.route('/apikey/get/<string:key_id>', methods=['GET', 'POST'])
+@verify_jwt
+def apikey_get_one(key_id, user_id, settings):
+
+    if isinstance(key_id, str) == False:
+        return jsonify({ 'error': "Required parameter 'id' is not a valid string", 'code': 400 })
+
+    # Verify that the api key the user is adding does not already exist
+    if 'profiles' not in settings:
+        return jsonify({'error': "Your account is not set up yet to accept API keys. Try re-logging into the website or report this to Maxim Stride", 'code': 400})
+
+    try:
+        for key in settings['profiles']:
+            if 'id' in key and key_id == key['id']:
+                return jsonify(key)
+
+    except:
+        return jsonify({'message': 'There was a problem retrieving the API key. Please report this to Maxim Stride'})
+
+    return jsonify({'message': 'Failed to find the requested API key. Make sure to use its unique ID in the request'})
+
+# SDE
+
 @app.route('/sde/blueprints', methods=['GET'])
 def sde_blueprints():
 
@@ -732,7 +963,8 @@ def insert_defaults(user_id, user_name):
     settings_doc = {
         'user_id': user_id,
         'premium': False,
-        'api_key': str(ObjectId())
+        'api_key': str(ObjectId()),
+        'profiles': []
     }
 
     profit_alltime = {

@@ -1,11 +1,11 @@
 FORMAT: 1A
-HOST: http://api.evetradeforecaster.com
+HOST: http://api.eve.exchange
 
-# EVE Trade Forecaster
+# EVE Exchange
 
-This API is designed for traders who wish to have more granular access to the ETF market dataset for exporting, or to remotely access special utilities related to their account.
+This API is designed for traders who wish to have more granular access to the EVE-X market dataset for exporting, or to remotely access special utilities related to their account.
 
-# EVE Trade Forecaster API Root [/]
+# EVE Exchange API Root [/]
 
 The root API will print out some basic metadata about the API, such as the list of root endpoints.
 
@@ -14,7 +14,7 @@ The root API will print out some basic metadata about the API, such as the list 
 + Response 200 (application/json)
 
         {
-          'message': "EVE Trade Forecaster API"
+          'message': "EVE Exchange API"
         }
 
 ## Group Market
@@ -206,6 +206,56 @@ Actions and resources related to the users subscription.
 + Response 200 (application/json)
     + Attributes (Blueprint)
 
+## Group API Keys
+
+## Add [/apikey/add]
+
+### Add a new character or corporation api key [POST]
+
++ Request (application/json)
+
+    + Attributes
+        + type (number, required) - 0 for character or 1 for corporation
+        + keyID (string, required) - The api key
+        + vCode (string, required) - The verification code
+        + characterID (number) - The selected character in the case of an account key
+
++ Response 200 (application/json)
+
+        {
+            "message": 'API key has been added to your account'
+        }
+
+## Remove [/apikey/remove/{id}]
+
++ Parameters
+    + id: 57fecb8e533fadda411ce082 (required, string) - API key unique ID
+
+### Remove the requests API key from the account by using its unique ID, which can be retrieved from the /apikey/get endpoint. [GET]
+
++ Response 200 (application/json)
+
+        {
+            "message": 'API key has been removed from your account'
+        }
+
+## Get all [/apikey/get]
+
+### Returns all of the active api keys on the account [GET]
+
++ Response 200 (application/json)
+    + Attributes (array[API Key])
+
+## Get specific key [/apikey/get/{id}]
+
++ Parameters
+    + id: 57fecb8e533fadda411ce082 (required, string) - API key unique ID
+
+### Returns the status of a specific api key by its id [GET]
+
++ Response 200 (application/json)
+    + Attributes (API Key)
+
 ## Data Structures
 
 ### Current Market Data
@@ -257,3 +307,11 @@ Actions and resources related to the users subscription.
 + materials: List of required materials (array[Material])
 + quantity: Number of this item that is manufactured from the blueprint (number)
 + name: Name of the manufactured item (string)
+
+### API Key
++ keyID: The api key (string)
++ vCode: Verification code (string)
++ type: 0 for character or 1 for corporation (number)
++ expires: Expiry date of the api key (string)
++ characterID: Character that is attached to this key if applicable (number)
++ id: Unique id for this key to be used by other endpoints (string)
