@@ -154,12 +154,6 @@ def verify_jwt(fn):
 def index():
     return current_app.send_static_file('api.html')
 
-@app.route('/schemas', methods=['GET'])
-def schemas():
-    return jsonify({
-        'message': "EVE Exchange API"
-    })
-
 @app.route('/market/forecast/', methods=['GET'])
 @verify_jwt
 def forecast(user_id, settings):
@@ -461,20 +455,6 @@ def portfolio_delete(id, user_id, settings):
 
     return jsonify({ 'message': 'Your portfolio has been deleted' })
 
-@app.route('/subscription', methods=['POST'])
-def subscription():
-    return jsonify({
-        'endpoints': {
-            'withdraw': {
-                'description': 'Actions relating to your EVE Exchange account',
-                'method': 'POST',
-                'response': {
-                    '$ref': 'endpoints'
-                }
-            }
-        }
-    })
-
 @app.route('/subscription/subscribe', methods=['POST'])
 @verify_jwt
 def subscription_subscribe(user_id, settings):
@@ -576,18 +556,6 @@ def subscription_unsubscribe(user_id, settings):
         return jsonify({ 'error': "There was a database error while processing your subscription request. This should be reported", 'code': 400 })
 
     return jsonify({ 'message': 'Your subscription status has been updated' })
-
-@app.route('/subscription/withdraw', methods=['POST'])
-def subscription_withdraw():
-    return jsonify({
-        'endpoints': {
-            '<int:amount>': {
-                'description': 'Request a withdrawal of "amount" from your EVE Exchange balance',
-                'method': 'POST',
-                'response': 'message'
-            }
-        }
-    })
 
 @app.route('/subscription/withdraw/<int:amount>', methods=['POST'])
 @verify_jwt
