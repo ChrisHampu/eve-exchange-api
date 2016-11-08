@@ -770,7 +770,7 @@ def apikey_add(user_id, settings):
                     found = True
                     characterName = row.attrib['characterName']
                     corporationName = row.attrib['corporationName']
-                    corporationID = 0 if row.attrib['corporationID'] == "0" else row.attrib['corporationID']
+                    corporationID = 0 if row.attrib['corporationID'] == "0" else int(row.attrib['corporationID'])
                     break
             if found is False:
                 return jsonify({'error': "The requested characterID is not associated with this api key", 'code': 400})
@@ -780,10 +780,10 @@ def apikey_add(user_id, settings):
             if keyResult.attrib['accessMask'] != "3149835":
                 return jsonify({'error': "Failed to verify that the access mask is 3149835", 'code': 400})
             row = rows[0] # there is only 1 entry in this case
-            characterID = row.attrib['characterID']
+            characterID = int(row.attrib['characterID'])
             characterName = row.attrib['characterName']
             corporationName = row.attrib['corporationName']
-            corporationID = row.attrib['corporationID']
+            corporationID = int(row.attrib['corporationID'])
 
     except:
         traceback.print_exc()
