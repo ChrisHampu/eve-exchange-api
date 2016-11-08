@@ -799,10 +799,10 @@ def apikey_add(user_id, settings):
             return jsonify({'error': "The given api key is already attached to your account", 'code': 400})
 
         if type == 0:
-            if characterID == key['character_id']:
+            if characterID == key['character_id'] and key['type'] == 0:
                 return jsonify({'error': "The given character already has an API key on your account", 'code': 400})
         else:
-            if corporationID == key['corporation_id']:
+            if corporationID == key['corporation_id'] and key['type'] == 1:
                 return jsonify({'error': "The given corporation already has an API key on your account", 'code': 400})
 
     # Sanity checks
