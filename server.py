@@ -1014,7 +1014,7 @@ def insert_defaults(user_id, user_name):
         "user_id": user_id,
         "time": datetime.utcnow(),
         "read": False,
-        "message": "Welcome to EVE Exchange! Please report any problems you find, and happy trading."
+        "message": "Welcome to EVE Exchange! Please report any problems you find to Maxim Stride or @maxim on Tweetfleet. Happy trading."
     }
 
     mongo_db.users.insert(user_doc)
