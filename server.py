@@ -1,3 +1,6 @@
+from gevent import monkey
+from gevent.wsgi import WSGIServer
+monkey.patch_all()
 import os
 import requests
 from datetime import datetime, timedelta
@@ -998,7 +1001,8 @@ def insert_defaults(user_id, user_name):
 
     profit_items = {
         "user_id": user_id,
-        "items": []
+        "items": [],
+        'profiles': []
     }
 
     subscription_doc = {
@@ -1119,4 +1123,9 @@ def not_found(error):
 
 # Start server
 if __name__ == '__main__':
-    app.run(debug=debug, port=port, host='0.0.0.0', threaded=False)
+    if debug:
+        app.run(debug=debug, port=port, host='0.0.0.0', threaded=False)
+    else:
+        print("Running in production WSGI mode on port %s" % port)
+        http_server = WSGIServer(('', port), app)
+        http_server.serve_forever()
