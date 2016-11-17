@@ -39,7 +39,7 @@ notification_collection = mongo_db.notifications
 
 portfolio_limit = 10 # Max number of portfolios a user can have
 
-port = os.environ.get('ETF_API_PORT', 5000)
+port = int(os.environ.get('ETF_API_PORT', 5000))
 env = os.environ.get('ETF_API_ENV', 'development')
 
 debug = False if env == 'production' else True
