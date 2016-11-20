@@ -642,11 +642,11 @@ def notification_set_read(not_id, user_id, settings):
 def notification_all_read(user_id, settings):
 
     try:
-        notification_collection.find_and_modify({'user_id': user_id}, {
+        notification_collection.update({'user_id': user_id}, {
             '$set': {
                 'read': True
             }
-        })
+        }, multi=True)
 
         requests.post('http://localhost:4501/publish/notifications/%s' % user_id, timeout=1)
 
