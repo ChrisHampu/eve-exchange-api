@@ -8,4 +8,4 @@ champu/EVE-Exchange-API:
     - pip3 install -r requirements.txt
     - nodejs /usr/local/lib/node_modules/aglio/bin/aglio.js --theme-variables slate -i etf-api.apib -o static/api.html
   Exec:
-    - python3 server.py >> api.log 2>&1
+    - python3 server.py
