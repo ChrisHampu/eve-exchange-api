@@ -39,6 +39,7 @@ notification_collection = mongo_db.notifications
 audit_log_collection = mongo_db.audit_log
 
 portfolio_limit = 25 # Max number of portfolios a user can have
+portfolio_component_limit = 20 # number of components per portfolio
 profile_free_limit = 5
 profile_premium_limit = 15
 
@@ -326,8 +327,8 @@ def create_portfolio(user_id, settings):
         if len(components) > 1:
             return jsonify({ 'error': "Industry portfolios must have a single manufacturable component", 'code': 400 })
     else:
-        if len(components) > 20:
-            return jsonify({ 'error': "Try a more reasonable number of components", 'code': 400 })
+        if len(components) > portfolio_component_limit:
+            return jsonify({ 'error': "The limit for the number of components in a portfolio is %s" % portfolio_component_limit, 'code': 400 })
 
     used_ids = []
     _components = []
