@@ -39,6 +39,8 @@ notification_collection = mongo_db.notifications
 audit_log_collection = mongo_db.audit_log
 
 portfolio_limit = 10 # Max number of portfolios a user can have
+profile_free_limit = 5
+profile_premium_limit = 15
 
 port = int(os.environ.get('ETF_API_PORT', 5000))
 env = os.environ.get('ETF_API_ENV', 'development')
@@ -755,6 +757,11 @@ def apikey_add(user_id, settings):
     except:
         return jsonify({ 'error': "There was a problem parsing your json request", 'code': 400 })
 
+    if settings.get('premium', False) == False and len(settings['profiles']) >= profile_free_limit:
+        return jsonify({'error': "You've reached the profile limit of %s for free users. Upgrade to premium for an additional %s profiles" % (profile_free_limit, profile_premium_limit-profile_free_limit), 'code': 400})
+    elif len(settings['profiles']) >= profile_premium_limit:
+        return jsonify({'error': "You've reached the profile limit of %s" % profile_premium_limit, 'code': 400})
+
     if 'type' not in request.json:
         return jsonify({ 'error': "Required parameter 'type' is missing", 'code': 400 })
     if 'keyID' not in request.json:
@@ -785,6 +792,9 @@ def apikey_add(user_id, settings):
             return jsonify({'error': "Required parameter 'characterID' is not a valid integer", 'code': 400})
     else:
         characterID = 0
+
+    if type == 1 and settings.get('premium', False) == False:
+        return jsonify({'error': "A premium subscription is required to add a corporation API key", 'code': 400})
 
     if type == 1 and 'walletKey' not in request.json:
         return jsonify({'error': "Required parameter 'walletKey' is missing", 'code': 400})
