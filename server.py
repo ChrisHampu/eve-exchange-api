@@ -38,7 +38,7 @@ users_collection = mongo_db.users
 notification_collection = mongo_db.notifications
 audit_log_collection = mongo_db.audit_log
 
-portfolio_limit = 10 # Max number of portfolios a user can have
+portfolio_limit = 25 # Max number of portfolios a user can have
 profile_free_limit = 5
 profile_premium_limit = 15
 
