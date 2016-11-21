@@ -36,6 +36,7 @@ portfolio_collection = mongo_db.portfolios
 subscription_collection = mongo_db.subscription
 users_collection = mongo_db.users
 notification_collection = mongo_db.notifications
+audit_log_collection = mongo_db.audit_log
 
 portfolio_limit = 10 # Max number of portfolios a user can have
 
@@ -434,6 +435,16 @@ def create_portfolio(user_id, settings):
 
         requests.post('http://localhost:4501/publish/portfolios/%s' % user_id, timeout=1)
 
+        audit_log_collection.insert({
+            'user_id': user_id,
+            'target': portfolioID,
+            'balance': 0,
+            'action': 5,
+            'time': datetime.now()
+        })
+
+        requests.post('http://localhost:4501/publish/audit', timeout=1)
+
     except:
         traceback.print_exc()
         return jsonify({ 'error': "There was an error with creating your portfolio", 'code': 400 })
@@ -451,12 +462,24 @@ def portfolio_delete(id, user_id, settings):
             raise Exception()
 
     except Exception:
+        traceback.print_exc()
         return jsonify({ 'error': "Failed to look up your portfolio. Double check that you have the correct portfolio ID", 'code': 400 })
 
     try:
         portfolio_collection.remove({'user_id': user_id, 'portfolioID': id}, multi=False)
 
         requests.post('http://localhost:4501/publish/portfolios/%s' % user_id, timeout=1)
+
+        audit_log_collection.insert({
+            'user_id': user_id,
+            'target': id,
+            'balance': 0,
+            'action': 6,
+            'time': datetime.now()
+        })
+
+        requests.post('http://localhost:4501/publish/audit', timeout=1)
+
     except Exception:
         traceback.print_exc()
         return jsonify({ 'error': "There was a database error while processing your deletion request", 'code': 400 })
@@ -476,6 +499,7 @@ def subscription_subscribe(user_id, settings):
         if subscription is None:
             raise Exception()
     except:
+        traceback.print_exc()
         return jsonify({ 'error': "Failed to look up your subscription status", 'code': 400 })
 
     is_premium = subscription['premium']
@@ -516,6 +540,16 @@ def subscription_subscribe(user_id, settings):
         })
 
         requests.post('http://localhost:4501/publish/subscription/%s' % user_id, timeout=1)
+
+        audit_log_collection.insert({
+            'user_id': user_id,
+            'target': 0,
+            'balance': 0,
+            'action': 2,
+            'time': datetime.now()
+        })
+
+        requests.post('http://localhost:4501/publish/audit', timeout=1)
 
     except Exception:
         traceback.print_exc()
@@ -559,6 +593,16 @@ def subscription_unsubscribe(user_id, settings):
 
         requests.post('http://localhost:4501/publish/subscription/%s' % user_id, timeout=1)
 
+        audit_log_collection.insert({
+            'user_id': user_id,
+            'target': 0,
+            'balance': 0,
+            'action': 3,
+            'time': datetime.now()
+        })
+
+        requests.post('http://localhost:4501/publish/audit', timeout=1)
+
     except Exception:
         traceback.print_exc()
         return jsonify({ 'error': "There was a database error while processing your subscription request. This should be reported", 'code': 400 })
@@ -601,6 +645,16 @@ def subscription_withdraw_amount(amount, user_id, settings):
         })
 
         requests.post('http://localhost:4501/publish/subscription/%s' % user_id, timeout=1)
+
+        audit_log_collection.insert({
+            'user_id': user_id,
+            'target': 0,
+            'balance': amount,
+            'action': 10,
+            'time': datetime.now()
+        })
+
+        requests.post('http://localhost:4501/publish/audit', timeout=1)
 
     except Exception:
         traceback.print_exc()
@@ -830,8 +884,17 @@ def apikey_add(user_id, settings):
             }
     })
 
+    audit_log_collection.insert({
+        'user_id': user_id,
+        'target': keyID,
+        'balance': 0,
+        'action': 7,
+        'time': datetime.now()
+    })
+
     try:
         requests.post('http://localhost:4501/publish/settings/%s' % user_id, timeout=1)
+        requests.post('http://localhost:4501/publish/audit', timeout=1)
     except:
         traceback.print_exc()
 
@@ -871,8 +934,17 @@ def apikey_remove(key_id, user_id, settings):
             }
     })
 
+    audit_log_collection.insert({
+        'user_id': user_id,
+        'target': key_id,
+        'balance': 0,
+        'action': 8,
+        'time': datetime.now()
+    })
+
     try:
         requests.post('http://localhost:4501/publish/settings/%s' % user_id, timeout=1)
+        requests.post('http://localhost:4501/publish/audit', timeout=1)
     except:
         traceback.print_exc()
 
@@ -1021,15 +1093,27 @@ def insert_defaults(user_id, user_name):
         "message": "Welcome to EVE Exchange! Please report any problems you find to Maxim Stride or @maxim on Tweetfleet. Happy trading."
     }
 
+    audit = {
+        'user_id': user_id,
+        'target': 0,
+        'balance': 0,
+        'action': 11,
+        'time': datetime.now()
+    }
+
     mongo_db.users.insert(user_doc)
     mongo_db.settings.insert(settings_doc)
     mongo_db.profit_alltime.insert(profit_alltime)
     mongo_db.profit_top_items.insert(profit_items)
     mongo_db.subscription.insert(subscription_doc)
     mongo_db.notifications.insert(beta_notification)
+    mongo_db.audit_log.insert(audit)
 
     # Publish the new account creation
     requests.post('http://localhost:4501/publish/subscription/%s' % user_id, timeout=1)
+
+    # Audit log
+    requests.post('http://localhost:4501/publish/audit', timeout=1)
 
     return user_doc, settings_doc
 
