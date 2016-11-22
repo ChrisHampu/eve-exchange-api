@@ -1189,7 +1189,8 @@ def do_deepstream_authorize():
             del user_doc['_id']
         if '_id' in settings_doc:
             del settings_doc['_id']
-
+    except jwt.exceptions.ExpiredSignatureError:
+        return 'Session has expired', 403
     except:
         traceback.print_exc()
         return 'Invalid credentials', 403
