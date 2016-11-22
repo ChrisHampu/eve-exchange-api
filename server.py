@@ -227,13 +227,18 @@ def forecast(user_id, settings):
         maxspread = minspread + 1
     '''
 
+    region = 10000002 # jita by default
+
+    if 'region' in settings:
+        region = settings['region']
+
     # Load data from redis cache
     allkeys = []
     idx = 0
     first = True
 
     while idx != 0 or first == True:
-        keys = re.scan(match='dly:*', cursor=idx)
+        keys = re.scan(match='dly:*-%s' % region, cursor=idx)
         idx = keys[0]
         allkeys.extend(keys[1])
         first = False
@@ -241,22 +246,22 @@ def forecast(user_id, settings):
     pip = re.pipeline()
 
     for k in allkeys:
-        pip.hmget(k, ['type', 'spreadSMA', 'tradeVolumeSMA', 'buyFifthPercentile'])
+        pip.hmget(k, ['type', 'spread_sma', 'volume_sma', 'buyPercentile'])
 
     docs = pip.execute()
 
     # Find ideal matches to query params
-    ideal = [doc[0] for doc in docs if doc[1] is not None and doc[2] is not None and doc[3] is not None and float(doc[1]) >= minspread and float(doc[1]) <= maxspread and float(doc[2]) >= minvolume and float(doc[2]) <= maxvolume and float(doc[3]) >= minprice and float(doc[3]) <= maxprice ]
+    ideal = [doc[0] for doc in docs if doc[0] is not None and doc[1] is not None and doc[2] is not None and doc[3] is not None and float(doc[1]) >= minspread and float(doc[1]) <= maxspread and float(doc[2]) >= minvolume and float(doc[2]) <= maxvolume and float(doc[3]) >= minprice and float(doc[3]) <= maxprice ]
 
     # Pull out complete documents for all ideal matches
 
     pip = re.pipeline()
 
     for k in ideal:
-        pip.hgetall('dly:'+k.decode('ascii'))
+        pip.hgetall('dly:%s-%s' % (k.decode('ascii'), region))
 
     # Execute and grab only wanted attributes
-    docs = [{key.decode('ascii'):float(row[key]) for key in (b'type', b'spread', b'tradeVolume', b'buyFifthPercentile', b'spreadSMA', b'tradeVolumeSMA', b'sellFifthPercentile')} for row in pip.execute()]
+    docs = [{key.decode('ascii'):float(row[key]) for key in (b'type', b'spread', b'tradeVolume', b'buyPercentile', b'spread_sma', b'volume_sma', b'sellPercentile')} for row in pip.execute()]
 
     return jsonify(docs)
 
