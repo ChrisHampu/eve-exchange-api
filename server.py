@@ -286,6 +286,9 @@ def forecast(user_id, settings):
 @verify_jwt
 def market_current(region, typeid, user_id, settings):
 
+    if settings.get('api_access', False) == False:
+        return jsonify({'error': "Active API access subscription is required to access this endpoint", 'code': 405})
+
     if isinstance(typeid, int) == False:
         return jsonify({ 'error': "Required parameter 'typeID' is not a valid integer", 'code': 400 })
 
@@ -293,7 +296,7 @@ def market_current(region, typeid, user_id, settings):
         return jsonify({ 'error': "Required parameter 'region' is not a valid integer", 'code': 400 })
 
     if region not in supported_regions:
-        return jsonify({ 'error': "The provided region %s is not yet supported" % region, 'code': 400 })
+        return jsonify({ 'error': "The provided region %s is not supported" % region, 'code': 400 })
 
     if re.exists('cur:'+str(typeid)+'-'+str(region)) == False:
         return jsonify({ 'error': "Failed to find current market data for the given typeID and region", 'code': 400 })
@@ -305,6 +308,9 @@ def market_current(region, typeid, user_id, settings):
 @app.route('/market/history/minutes/<int:typeid>', methods=['GET'])
 @verify_jwt
 def market_history_minutes(typeid, user_id, settings):
+
+    if settings.get('api_access', False) == False:
+        return jsonify({'error': "Active API access subscription is required to access this endpoint", 'code': 405})
 
     if isinstance(typeid, int) == False:
         return jsonify({ 'error': "Required parameter 'typeID' is not a valid integer", 'code': 400 })
@@ -320,6 +326,9 @@ def market_history_minutes(typeid, user_id, settings):
 @verify_jwt
 def market_history_hourly(typeid, user_id, settings):
 
+    if settings.get('api_access', False) == False:
+        return jsonify({'error': "Active API access subscription is required to access this endpoint", 'code': 405})
+
     if isinstance(typeid, int) == False:
         return jsonify({ 'error': "Required parameter 'typeID' is not a valid integer", 'code': 400 })
 
@@ -333,6 +342,9 @@ def market_history_hourly(typeid, user_id, settings):
 @app.route('/market/history/daily/<int:typeid>', methods=['GET'])
 @verify_jwt
 def market_history_daily(typeid, user_id, settings):
+
+    if settings.get('api_access', False) == False:
+        return jsonify({'error': "Active API access subscription is required to access this endpoint", 'code': 405})
 
     if isinstance(typeid, int) == False:
         return jsonify({ 'error': "Required parameter 'typeID' is not a valid integer", 'code': 400 })
