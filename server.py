@@ -13,6 +13,7 @@ import jwt
 from flask import Flask, Response, request, jsonify, current_app, redirect, url_for, session
 from flask_cors import CORS
 from flask_oauthlib.client import OAuth
+from werkzeug.security import gen_salt
 from pymongo import MongoClient, DESCENDING
 from bson import ObjectId
 from functools import wraps
@@ -65,7 +66,10 @@ oauth = OAuth(app)
 evesso = oauth.remote_app('evesso',
     consumer_key=os.environ.get('ETF_API_OAUTH_KEY', 'example'),
     consumer_secret=os.environ.get('ETF_API_OAUTH_SECRET', 'example'),
-    request_token_params={'scope': ''},
+    request_token_params={
+        'scope': '',
+        'state': lambda: session['evesso_state']
+    },
     base_url='https://login.eveonline.com/',
     request_token_url=None,
     access_token_method='POST',
@@ -1220,10 +1224,18 @@ def sde_marketgroups():
 
 @app.route('/oauth')
 def do_oauth():
+    session['evesso_state'] = gen_salt(10)
     return evesso.authorize(callback=url_for('do_oauth_authorized', _external=True))
 
 @app.route('/oauth/verify')
 def do_oauth_authorized():
+    state = request.args.get('state')
+
+    if not state or session.get('evesso_state') != state:
+        return jsonify({'error': "State was not preserved during SSO requests", 'code': 400})
+
+    del session['evesso_state']
+
     resp = evesso.authorized_response()
     if resp is None or resp.get('access_token') is None:
         return 'Access denied: reason=%s error=%s resp=%s' % (
