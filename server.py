@@ -120,13 +120,7 @@ def verify_jwt(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
 
-        start = time.perf_counter()
-
-        res = None
         user_settings = None
-
-        if request.is_json == False:
-            return jsonify({ 'error': "Request Content-Type must be set to 'application/json'", 'code': 400 })
 
         try:
             auth_header = request.headers.get('Authorization')
@@ -364,12 +358,9 @@ def market_history_daily(typeid, user_id, settings):
 @verify_jwt
 def create_portfolio(user_id, settings):
 
-    if request.is_json == False:
-        return jsonify({ 'error': "Request must be in json format", 'code': 400 })
-
     try:
-        if request.json is None:
-            return jsonify({ 'error': "Request must be in json format", 'code': 400 })
+        if request.is_json == False:
+            return jsonify({'error': "Request Content-Type header must be set to 'application/json'", 'code': 400})
 
     except:
         return jsonify({ 'error': "There was a problem parsing your json request", 'code': 400 })
@@ -964,12 +955,9 @@ def notification_set_unread(not_id, user_id, settings):
 @verify_jwt
 def apikey_add(user_id, settings):
 
-    if request.is_json == False:
-        return jsonify({ 'error': "Request must be in json format", 'code': 400 })
-
     try:
-        if request.json is None:
-            return jsonify({ 'error': "Request must be in json format", 'code': 400 })
+        if request.is_json == False:
+            return jsonify({'error': "Request Content-Type header must be set to 'application/json'", 'code': 400})
 
     except:
         return jsonify({ 'error': "There was a problem parsing your json request", 'code': 400 })
@@ -1357,7 +1345,7 @@ def do_deepstream_authorize():
 
     try:
         if request.is_json == False:
-            return 'Invalid credentials', 403
+            return jsonify({'error': "Request Content-Type header must be set to 'application/json'", 'code': 400})
     except:
         return 'Invalid request format', 403
 
