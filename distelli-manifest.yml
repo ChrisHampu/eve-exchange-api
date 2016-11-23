@@ -6,6 +6,6 @@ champu/EVE-Exchange-API:
     - '*'
   PostInstall:
     - pip3 install -r requirements.txt
-    - nodejs /usr/local/lib/node_modules/aglio/bin/aglio.js --theme-variables variables-eve-x.less -i etf-api.apib -o static/api.html
+    - nodejs /usr/local/lib/node_modules/aglio/bin/aglio.js --theme-style default --theme-style ./style-eve-x.less --theme-variables variables-eve-x.less -i etf-api.apib -o static/api.html
   Exec:
     - python3 server.py
