@@ -5,17 +5,18 @@ HOST: https://api.eve.exchange
 
 This API is designed for traders who wish to have more granular access to the EVE-X market dataset for exporting, or to remotely access special utilities related to their account.
 
-# EVE Exchange API Root [/]
+Authentication is required in order to access any endpoint in this API. Authentication is done through an additional "Authorization" HTTP header. The format is as follows:
 
-The root API will print out some basic metadata about the API, such as the list of root endpoints.
+```http
+Authorization: Key {api_key}
+```
 
-## Retrieve the Entry Point [GET]
+Where {api_key} is the API key provided by EVE Exchange in your Profile -> API Access page. In order to use your API key, it must first be enabled there.
+The EVE Exchange application uses a token in place of a key for authenticating with the API, which can also be used but is not recommended.
 
-+ Response 200 (application/json)
+The access for each endpoint can range from being fully accessible, premium only, or exclusive to API access subscribers. Each endpoint will specify its availability.
 
-        {
-          'message': "EVE Exchange API"
-        }
+Limited support is provided to API access subscribers by contacting us directly. Please report any bugs you find.
 
 ## Group Market
 
@@ -36,6 +37,8 @@ Actions and resources related to market data.
 Returns an array of market data documents that meet the given parameters.
 At least one of each spread, volume, and price parameters must be set using either min, max, or both.
 
+Premium subscription required.
+
 + Response 200 (application/json)
     + Attributes (array[Daily Market Data])
 
@@ -45,6 +48,8 @@ At least one of each spread, volume, and price parameters must be set using eith
     + typeid: 34 (number) Item type id for current market data
 
 ### Request the current market data for an item [GET]
+
+API access subscription required.
 
 + Response 200 (application/json)
     + Attributes (Current Market Data)
@@ -56,6 +61,10 @@ At least one of each spread, volume, and price parameters must be set using eith
 
 ### Request market history at a 5 minute time resolution for a specific item [GET]
 
+The past 24 hours of market data returned in 5 minute intervals.
+
+API access subscription required.
+
 + Response 200 (application/json)
     + Attributes (array[Market Data])
 
@@ -65,6 +74,10 @@ At least one of each spread, volume, and price parameters must be set using eith
     + typeid: 34 (number) Item type id for history request
 
 ### Request market history at an hourly time resolution for a specific item [GET]
+
+The past 7 days of market data returned in hourly intervals.
+
+API access subscription required.
 
 + Response 200 (application/json)
     + Attributes (array[Market Data])
@@ -76,6 +89,10 @@ At least one of each spread, volume, and price parameters must be set using eith
 
 ### Request market history at a daily time resolution for a specific item [GET]
 
+Returns the entire available market history that EVE Exchange has been recording in daily intervals.
+
+API access subscription required.
+
 + Response 200 (application/json)
     + Attributes (array[Market Data])
 
@@ -86,6 +103,8 @@ Actions and resources related to portfolios.
 ## Create [/portfolio/create]
 
 ### Create a new portfolio [POST]
+
+Premium subscription required.
 
 + Request (application/json)
 
@@ -109,6 +128,8 @@ Actions and resources related to portfolios.
 
 ### Delete a portfolio [POST]
 
+Premium subscription required.
+
 + Response 200 (application/json)
 
         {
@@ -121,7 +142,7 @@ Actions and resources related to the users subscription.
 
 ## Subscribe [/subscription/subscribe]
 
-### Activate subscription using current balance [POST]
+### Activate premium subscription using current balance [POST]
 
 + Response 200 (application/json)
 
@@ -131,7 +152,9 @@ Actions and resources related to the users subscription.
 
 ## Unsubscribe [/subscription/unsubscribe]
 
-### Cancel active subscription [POST]
+### Cancel active premium subscription [POST]
+
+Premium subscription required.
 
 + Response 200 (application/json)
 
@@ -150,6 +173,30 @@ Actions and resources related to the users subscription.
 
         {
             "message": 'Your withdrawal request has been submitted'
+        }
+
+## Enable API [/subscription/api/enable]
+
+### Activate API service access [POST]
+
+Premium subscription required.
+
++ Response 200 (application/json)
+
+        {
+            "message": 'API access has been enabled on your account'
+        }
+
+## Disable API [/subscription/api/disable]
+
+### Disable API service access [POST]
+
+Premium subscription required.
+
++ Response 200 (application/json)
+
+        {
+            "message": 'API access has been disabled on your account'
         }
 
 ## Group Notification
@@ -212,6 +259,8 @@ Actions and resources related to the users subscription.
 
 ### Add a new character or corporation api key [POST]
 
+Premium subscription required for corporation keys.
+
 + Request (application/json)
 
     + Attributes
@@ -231,7 +280,7 @@ Actions and resources related to the users subscription.
 + Parameters
     + id: 57fecb8e533fadda411ce082 (required, string) - API key unique ID
 
-### Remove the requests API key from the account by using its unique ID, which can be retrieved from the /apikey/get endpoint. [GET]
+### Remove the requested API key from the account by using its unique ID, which can be retrieved from the /apikey/get endpoint. [GET]
 
 + Response 200 (application/json)
 
@@ -261,12 +310,10 @@ Actions and resources related to the users subscription.
 ### Current Market Data
 + tradeVolume: Approximated trade volume for the time period (number)
 + spread: Margin between buy & sell price (number)
-+ buyFifthPercentile: Adjust buy price (number)
-+ sellFifthPercentile: Adjust sell price (number)
++ buyPercentile: Adjusted buy price (number)
++ sellPercentile: Adjusted sell price (number)
 + time: Timestamp when document was created (number)
 + type: Type/item ID for this document (number)
-+ high: Highest price for this time period (number)
-+ low: Lowest price for this time period (number)
 
 ### Daily Market Data
 + tradeVolume: Approximated trade volume for the time period (number)

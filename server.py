@@ -42,6 +42,7 @@ portfolio_limit = 100 # Max number of portfolios a user can have
 portfolio_component_limit = 25 # number of components per portfolio
 profile_free_limit = 5
 profile_premium_limit = 15
+supported_regions = [10000002, 10000043, 10000032, 10000042, 10000030]
 
 port = int(os.environ.get('ETF_API_PORT', 5000))
 env = os.environ.get('ETF_API_ENV', 'development')
@@ -118,7 +119,7 @@ def verify_jwt(fn):
         user_settings = None
 
         if request.is_json == False:
-            return jsonify({ 'error': "Request must be in json format", 'code': 400 })
+            return jsonify({ 'error': "Request Content-Type must be set to 'application/json'", 'code': 400 })
 
         try:
             auth_header = request.headers.get('Authorization')
@@ -134,7 +135,7 @@ def verify_jwt(fn):
             if len(split) != 2:
                 return jsonify({ 'error': "Invalid authorization header format", 'code': 400 })
 
-            if split[0] != "Token" and split[1] != "Key":
+            if split[0] != "Token" and split[0] != "Key":
                 return jsonify({ 'error': "Authorization header must include 'Token' or 'Key'", 'code': 400 })
 
             if split[0] == "Token":
@@ -148,6 +149,16 @@ def verify_jwt(fn):
                     return jsonify({'error': "Authorization token is invalid", 'code': 400})
                 except:
                     return jsonify({'error': "Failed to parse authorization token", 'code': 400})
+
+            elif split[0] == "Key":
+
+                try:
+                    user_settings = mongo_db.settings.find_one({'api_key': split[1]})
+
+                    if user_settings is None:
+                        return jsonify({'error': "Unable to verify your API key. Please check that it is valid and typed correctly", 'code': 400})
+                except:
+                    return jsonify({'error': "Failed to correctly parse api key. Please check that it is valid and typed correctly", 'code': 400})
         except:
             traceback.print_exc()
             return jsonify({ 'error': "Failed to parse authorization header", 'code': 400 })
@@ -169,6 +180,9 @@ def index():
 @app.route('/market/forecast/', methods=['GET'])
 @verify_jwt
 def forecast(user_id, settings):
+
+    if settings.get('premium', False) == False:
+        return jsonify({'error': "A Premium subscription is required to access this endpoint", 'code': 405})
 
     # Validation
     try:
@@ -265,19 +279,25 @@ def forecast(user_id, settings):
 
     return jsonify(docs)
 
-@app.route('/market/current/<int:typeid>', methods=['GET'])
+@app.route('/market/current/<int:region>/<int:typeid>', methods=['GET'])
 @verify_jwt
-def market_current(typeid, user_id, settings):
+def market_current(region, typeid, user_id, settings):
 
     if isinstance(typeid, int) == False:
         return jsonify({ 'error': "Required parameter 'typeID' is not a valid integer", 'code': 400 })
 
-    if re.exists('cur:'+str(typeid)) == False:
-        return jsonify({ 'error': "Failed to find current market data for the given typeID", 'code': 400 })
+    if isinstance(region, int) == False:
+        return jsonify({ 'error': "Required parameter 'region' is not a valid integer", 'code': 400 })
 
-    reDoc = re.hgetall('cur:'+str(typeid))
+    if region not in supported_regions:
+        return jsonify({ 'error': "The provided region %s is not yet supported" % region, 'code': 400 })
 
-    return jsonify({key.decode('ascii'):float(reDoc[key]) for key in (b'type', b'spread', b'tradeVolume', b'buyFifthPercentile', b'sellFifthPercentile')})
+    if re.exists('cur:'+str(typeid)+'-'+str(region)) == False:
+        return jsonify({ 'error': "Failed to find current market data for the given typeID and region", 'code': 400 })
+
+    reDoc = re.hgetall('cur:'+str(typeid)+'-'+str(region))
+
+    return jsonify({key.decode('ascii'):float(reDoc[key]) for key in (b'type', b'spread', b'tradeVolume', b'buyPercentile', b'sellPercentile')})
 
 @app.route('/portfolio/create', methods=['POST'])
 @verify_jwt
@@ -292,6 +312,9 @@ def create_portfolio(user_id, settings):
 
     except:
         return jsonify({ 'error': "There was a problem parsing your json request", 'code': 400 })
+
+    if settings.get('premium', False) == False:
+        return jsonify({'error': "A Premium subscription is required to access this endpoint", 'code': 405})
 
     if 'name' not in request.json:
         return jsonify({ 'error': "Required parameter 'name' is missing", 'code': 400 })
@@ -463,6 +486,9 @@ def create_portfolio(user_id, settings):
 @verify_jwt
 def portfolio_delete(id, user_id, settings):
 
+    if settings.get('premium', False) == False:
+        return jsonify({'error': "A Premium subscription is required to access this endpoint", 'code': 405})
+
     try:
         portfolio = portfolio_collection.find_one({'user_id': user_id, 'portfolioID': id})
 
@@ -569,6 +595,9 @@ def subscription_subscribe(user_id, settings):
 @verify_jwt
 def subscription_unsubscribe(user_id, settings):
 
+    if settings.get('premium', False) == False:
+        return jsonify({'error': "A Premium subscription is required to access this endpoint", 'code': 405})
+
     subscription = None
 
     try:
@@ -578,12 +607,6 @@ def subscription_unsubscribe(user_id, settings):
             raise Exception()
     except:
         return jsonify({ 'error': "Failed to look up your subscription status", 'code': 400 })
-
-    is_premium = subscription['premium']
-
-    if is_premium is not None:
-        if is_premium == False:
-            return jsonify({ 'error': "Your current subscription status is not premium", 'code': 400 })
 
     try:
         subscription_collection.find_and_modify({'user_id': user_id}, {
@@ -669,6 +692,133 @@ def subscription_withdraw_amount(amount, user_id, settings):
         return jsonify({ 'error': "There was a database error while processing your withdrawal request. This should be reported", 'code': 400 })
 
     return jsonify({ 'message': 'Your withdrawal request has been submitted' })
+
+@app.route('/subscription/api/enable', methods=['POST'])
+@verify_jwt
+def api_access_enable(user_id, settings):
+
+    if settings.get('premium', False) == False:
+        return jsonify({'error': "A Premium subscription is required to access this endpoint", 'code': 400})
+
+    cost = 150000000
+    pro_rate = 5000000
+
+    try:
+        subscription = subscription_collection.find_one({'user_id': user_id})
+
+        if subscription is None:
+            raise Exception()
+    except:
+        traceback.print_exc()
+        return jsonify({ 'error': "Failed to look up your subscription status", 'code': 400 })
+
+    if (subscription.get('api_access', False)) == True:
+        return jsonify({'error': "API access is already enabled on your account", 'code': 400})
+
+    balance = subscription['balance']
+
+    subscription_expires = subscription['subscription_date'] + timedelta(days=30)
+
+    days_pro_rate = subscription_expires - datetime.utcnow()
+
+    cost = cost - max(0, min(cost, int(pro_rate * (29 - days_pro_rate.days))))
+
+    if cost > balance:
+     return jsonify({ 'error': "Insufficient balance", 'code': 400 })
+
+    try:
+        subscription_collection.find_and_modify({'user_id': user_id}, {
+            '$set': {
+                'api_access': True
+            },
+            '$inc': {
+                'balance': -cost
+            },
+            '$push': {
+                'history': {
+                    'time': datetime.utcnow(),
+                    'type': 1,
+                    'amount': cost,
+                    'description': 'API access fee',
+                    'processed': True
+                }
+            }
+        })
+
+        settings_collection.find_and_modify({'user_id': user_id}, {
+            '$set': {
+                'api_access': True,
+            },
+        })
+
+        requests.post('http://localhost:4501/publish/subscription/%s' % user_id, timeout=1)
+
+        audit_log_collection.insert({
+            'user_id': user_id,
+            'target': 0,
+            'balance': cost,
+            'action': 12,
+            'time': datetime.now()
+        })
+
+        requests.post('http://localhost:4501/publish/audit', timeout=1)
+
+    except Exception:
+        traceback.print_exc()
+        return jsonify({ 'error': "There was a database error while processing your subscription request. This should be reported", 'code': 400 })
+
+    return jsonify({ 'message': 'API access has been enabled on your account' })
+
+@app.route('/subscription/api/disable', methods=['POST'])
+@verify_jwt
+def api_access_disable(user_id, settings):
+
+    if settings.get('premium', False) == False:
+        return jsonify({'error': "A Premium subscription is required to access this endpoint", 'code': 405})
+
+    subscription = None
+
+    try:
+        subscription = subscription_collection.find_one({'user_id': user_id})
+
+        if subscription is None:
+            raise Exception()
+    except:
+        return jsonify({ 'error': "Failed to look up your subscription status", 'code': 400 })
+
+    if subscription.get('api_access', False) == False:
+        return jsonify({'error': "API access is currently not enabled on your account", 'code': 400})
+
+    try:
+        subscription_collection.find_and_modify({'user_id': user_id}, {
+            '$set': {
+                'api_access': False
+            }
+        })
+
+        settings_collection.find_and_modify({'user_id': user_id}, {
+            '$set': {
+                'api_access': False
+            },
+        })
+
+        requests.post('http://localhost:4501/publish/subscription/%s' % user_id, timeout=1)
+
+        audit_log_collection.insert({
+            'user_id': user_id,
+            'target': 0,
+            'balance': 0,
+            'action': 13,
+            'time': datetime.now()
+        })
+
+        requests.post('http://localhost:4501/publish/audit', timeout=1)
+
+    except Exception:
+        traceback.print_exc()
+        return jsonify({ 'error': "There was a database error while processing your subscription request. This should be reported", 'code': 400 })
+
+    return jsonify({ 'message': 'API access has been disabled for your account' })
 
 @app.route('/notification/<string:not_id>/read', methods=['POST'])
 @verify_jwt
@@ -1211,15 +1361,15 @@ def not_found(error):
     return jsonify({ 'error': "Route not found", 'code': 404 })
 
 @app.errorhandler(403)
-def not_found(error):
+def validation_error(error):
     return jsonify({ 'error': "Failed to validate your authentication token or api key", 'code': 403 })
 
 @app.errorhandler(401)
-def not_found(error):
+def auth_error(error):
     return jsonify({ 'error': "Failed to validate your authentication token or api key", 'code': 401 })
 
 @app.errorhandler(405)
-def not_found(error):
+def not_allowed(error):
     return jsonify({ 'error': "Method or endpoint is not allowed", 'code': 405 })
 
 # Start server
