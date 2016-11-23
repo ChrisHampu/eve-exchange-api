@@ -42,10 +42,11 @@ Premium subscription required.
 + Response 200 (application/json)
     + Attributes (array[Daily Market Data])
 
-## Current [/market/current/{typeid}]
+## Current [/market/current/{region}/{typeid}]
 
 + Parameters
-    + typeid: 34 (number) Item type id for current market data
+    + typeid: 10000002 (number) Region ID
+    + typeid: 34 (number) Item type ID
 
 ### Request the current market data for an item [GET]
 
@@ -66,7 +67,7 @@ The past 24 hours of market data returned in 5 minute intervals.
 API access subscription required.
 
 + Response 200 (application/json)
-    + Attributes (array[Market Data])
+    + Attributes (array[Minutes Bulk Market Data])
 
 ## Hourly History [/market/history/hourly/{typeid}]
 
@@ -80,7 +81,7 @@ The past 7 days of market data returned in hourly intervals.
 API access subscription required.
 
 + Response 200 (application/json)
-    + Attributes (array[Market Data])
+    + Attributes (array[Minutes Bulk Market Data])
 
 ## Daily History [/market/history/daily/{typeid}]
 
@@ -94,7 +95,7 @@ Returns the entire available market history that EVE Exchange has been recording
 API access subscription required.
 
 + Response 200 (application/json)
-    + Attributes (array[Market Data])
+    + Attributes (array[Daily Bulk Market Data])
 
 ## Group Portfolio
 
@@ -326,6 +327,52 @@ Premium subscription required for corporation keys.
 + type: Type/item ID for this document (number)
 + high: Highest price for this time period (number)
 + low: Lowest price for this time period (number)
+
+## Minutes Region Market Data
++ buyAvg: Average buy price (number)
++ buyMax: Maximum buy price (number)
++ buyMin: Minimum buy price (number)
++ buyPercentile: Adjusted fifth percentile buy price (number)
++ buyVolume: Total buy volume for this item (number)
++ region: Region ID (number)
++ sellAvg: Average sell price (number)
++ sellMax: Maximum sell price (number)
++ sellMin: Minimum sell price (number)
++ sellPercentile: Adjusted fifth percentile sell price (number)
++ sellVolume: Total sell volume for this item (number)
++ spread: Spread of the buy and sell percentile prices (number)
++ spreadValue: Potential profit from the resale of this item (number)
++ tradeValue: Total profit value traded during this time period (number)
++ tradeVolume: Estimated volume sold during this time span (number)
+
+### Minutes Bulk Market Data
++ type: Item type ID (number)
++ time: ISO 8601 timestamp (string)
++ regions: (array[Minutes Region Market Data])
+
+## Daily Region Market Data
++ region: Region ID (number)
++ buyAvg: Average buy price (number)
++ buyMax: Maximum buy price (number)
++ buyMin: Minimum buy price (number)
++ buyPercentile: Adjusted fifth percentile buy price (number)
++ buyVolume: Total buy volume for this item (number)
++ sellAvg: Average sell price (number)
++ sellMax: Maximum sell price (number)
++ sellMin: Minimum sell price (number)
++ sellPercentile: Adjusted fifth percentile sell price (number)
++ sellVolume: Total sell volume for this item (number)
++ spread: Spread of the buy and sell percentile prices (number)
++ spreadValue: Potential profit from the resale of this item (number)
++ tradeValue: Total profit value traded during this time period (number)
++ tradeVolume: Estimated volume sold during this time span (number)
++ volume_sma: 7 day moving average of trade volume (number)
++ spread_sma: 7 day moving average of spread (number)
+
+### Daily Bulk Market Data
++ type: Item type ID (number)
++ time: ISO 8601 timestamp (string)
++ regions: (array[Daily Region Market Data])
 
 ### Portfolio Component
 + typeID: Item ID for the component (number)

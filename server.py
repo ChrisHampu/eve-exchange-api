@@ -37,6 +37,9 @@ subscription_collection = mongo_db.subscription
 users_collection = mongo_db.users
 notification_collection = mongo_db.notifications
 audit_log_collection = mongo_db.audit_log
+aggregates_minutes = mongo_db.aggregates_minutes
+aggregates_hourly = mongo_db.aggregates_hourly
+aggregates_daily = mongo_db.aggregates_daily
 
 portfolio_limit = 100 # Max number of portfolios a user can have
 portfolio_component_limit = 25 # number of components per portfolio
@@ -298,6 +301,48 @@ def market_current(region, typeid, user_id, settings):
     reDoc = re.hgetall('cur:'+str(typeid)+'-'+str(region))
 
     return jsonify({key.decode('ascii'):float(reDoc[key]) for key in (b'type', b'spread', b'tradeVolume', b'buyPercentile', b'sellPercentile')})
+
+@app.route('/market/history/minutes/<int:typeid>', methods=['GET'])
+@verify_jwt
+def market_history_minutes(typeid, user_id, settings):
+
+    if isinstance(typeid, int) == False:
+        return jsonify({ 'error': "Required parameter 'typeID' is not a valid integer", 'code': 400 })
+
+    data = list(aggregates_minutes.find({'type': typeid}, fields={'_id': False}))
+
+    for d in data:
+        d['time'] = d['time'].isoformat()
+
+    return jsonify(data)
+
+@app.route('/market/history/hourly/<int:typeid>', methods=['GET'])
+@verify_jwt
+def market_history_hourly(typeid, user_id, settings):
+
+    if isinstance(typeid, int) == False:
+        return jsonify({ 'error': "Required parameter 'typeID' is not a valid integer", 'code': 400 })
+
+    data = list(aggregates_hourly.find({'type': typeid}, fields={'_id': False}))
+
+    for d in data:
+        d['time'] = d['time'].isoformat()
+
+    return jsonify(data)
+
+@app.route('/market/history/daily/<int:typeid>', methods=['GET'])
+@verify_jwt
+def market_history_daily(typeid, user_id, settings):
+
+    if isinstance(typeid, int) == False:
+        return jsonify({ 'error': "Required parameter 'typeID' is not a valid integer", 'code': 400 })
+
+    data = list(aggregates_daily.find({'type': typeid}, fields={'_id': False}))
+
+    for d in data:
+        d['time'] = d['time'].isoformat()
+
+    return jsonify(data)
 
 @app.route('/portfolio/create', methods=['POST'])
 @verify_jwt
