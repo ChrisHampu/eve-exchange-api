@@ -340,16 +340,16 @@ Premium subscription required for corporation keys.
 + Response 200 (application/json)
     + Attributes (API Key)
 
-## Data Structures
+# Data Structures
 
-### Forecast Result
+## Forecast Result
 + buyPercentile: 5.705 (number) - Adjusted fifth percentile buy price
 + sellPercentile: 5.9 (number) - Adjusted fifth percentile sell price
 + spread: 3.305084745762727 (number) - Margin between buy & sell price
 + tradeVolume: 1000 (number) - Estimated daily trade volume for the past day
 + type: 34 (number) - Type/item ID for this item
 
-### Current Market Data
+## Current Market Data
 + tradeVolume: 1000 (number) - Approximated trade volume for the time period
 + spread: 14.7 (number) - Margin between buy & sell price
 + buyPercentile: 237683 (number) - Adjusted buy price
@@ -373,7 +373,7 @@ Premium subscription required for corporation keys.
 + tradeValue: 16000 (number) - Total profit value traded during this time period
 + tradeVolume: 1000 (number) Estimated volume sold during this time span
 
-### Minutes Bulk Market Data
+## Minutes Bulk Market Data
 + type: 34 (number) - Item type ID
 + time: `2016-11-04T22:57:33.441000` (string) - ISO 8601 timestamp
 + regions: (array[Minutes Region Market Data])
@@ -397,30 +397,30 @@ Premium subscription required for corporation keys.
 + volume_sma:  (number) - 7 day moving average of trade volume
 + spread_sma:  (number) - 7 day moving average of spread
 
-### Daily Bulk Market Data
+## Daily Bulk Market Data
 + type: 34 (number) - Type/item ID for this document
 + time: `2016-11-04T22:57:33.441000` (string) - ISO 8601 timestamp
 + regions: (array[Daily Region Market Data])
 
-### Portfolio Component
+## Portfolio Component
 + typeID: 13774 (number) - Item ID for the component
 + quantity: 10 (number) - Quantity of the component
 
-### Material
+## Material
 + quantity: 19501 (number) - Number of this item required
 + typeID: 34 (number) - Type ID for this item
 
-### Material Array (array)
+## Material Array (array)
 + (Material)
 
-### Simulation (object)
+## Simulation (object)
 + sell: 355000 (number) - Margin trading adjusted sell value
 + buy: 315000 (number) - Margin trading adjusted buy value
 + profit: 30000 (number) - Estimated profit made from a trade including tax, broker fees, and overhead
 + tax: 5000 (number) - Sales tax for this item
 + broker: 5000 (number) - Broker fees paid for this item
 
-### Component
+## Component
 + volume: 27297 (number) - The estimated daily trading volume for this item
 + quantity: 81 (number) - The quantity of this component
 + buildSpread: 13.44 (number) - The potential profit of building this component vs buying it for an industrial portfolio
@@ -430,10 +430,10 @@ Premium subscription required for corporation keys.
 + typeID: 11552 (number) - The type ID for this component
 + (Simulation)
 
-### Component Array (array)
+## Component Array (array)
 + (Component)
 
-### API Key
+## API Key
 + key_id: 1234567 (string) - The api key
 + vcode: 12345678910 (string) - Verification code
 + type: 0 (number) - 0 for character or 1 for corporation
