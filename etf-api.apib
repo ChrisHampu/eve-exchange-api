@@ -40,7 +40,7 @@ At least one of each spread, volume, and price parameters must be set using eith
 Premium subscription required.
 
 + Response 200 (application/json)
-    + Attributes (array[Forecast Result], fixed)
+    + Attributes (array[Forecast Result], fixed-type)
 
 ## Current [/market/current/{region}/{typeid}]
 
@@ -67,7 +67,7 @@ The past 24 hours of market data returned in 5 minute intervals.
 API access subscription required.
 
 + Response 200 (application/json)
-    + Attributes (array[Minutes Bulk Market Data], fixed)
+    + Attributes (array[Minutes Bulk Market Data], fixed-type)
 
 ## Hourly History [/market/history/hourly/{typeid}]
 
@@ -81,7 +81,7 @@ The past 7 days of market data returned in hourly intervals.
 API access subscription required.
 
 + Response 200 (application/json)
-    + Attributes (array[Minutes Bulk Market Data], fixed)
+    + Attributes (array[Minutes Bulk Market Data], fixed-type)
 
 ## Daily History [/market/history/daily/{typeid}]
 
@@ -95,7 +95,7 @@ Returns the entire available market history that EVE Exchange has been recording
 API access subscription required.
 
 + Response 200 (application/json)
-    + Attributes (array[Daily Bulk Market Data], fixed)
+    + Attributes (array[Daily Bulk Market Data], fixed-type)
 
 ## Own Market Orders [/market/orders/self]
 
@@ -175,7 +175,7 @@ API access subscription required.
 
 + Response 200 (application/json)
 
-    + Attributes (Portfolio, fixed)
+    + Attributes (Portfolio, fixed-type)
 
 ## Get All Portfolios [/portfolio/get/all]
 
@@ -185,7 +185,7 @@ API access subscription required.
 
 + Response 200 (application/json)
 
-    + Attributes (array[Portfolio], fixed)
+    + Attributes (array[Portfolio], fixed-type)
 
 ## Group Subscription
 
