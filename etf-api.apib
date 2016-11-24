@@ -40,7 +40,7 @@ At least one of each spread, volume, and price parameters must be set using eith
 Premium subscription required.
 
 + Response 200 (application/json)
-    + Attributes (array[Daily Market Data])
+    + Attributes (array[Forecast Result])
 
 ## Current [/market/current/{region}/{typeid}]
 
@@ -97,6 +97,33 @@ API access subscription required.
 + Response 200 (application/json)
     + Attributes (array[Daily Bulk Market Data])
 
+## Own Market Orders [/market/orders/self]
+
+### Return the market orders for each profile on your account [GET]
+
+This uses the same format as the CREST market orders in addition to fields that identify the profile each order belongs to.
+
+API access subscription required.
+
++ Response 200 (application/json)
+        [
+            {
+                "bid": "1",
+                "issued": "2016-11-19 19:40:06",
+                "minVolume": "1",
+                "orderID": "4679197030",
+                "orderState": "0",
+                "price": "18875624.64",
+                "stationID": "60003760",
+                "typeID": "29668",
+                "user_id": 12345678,
+                "volEntered": "10",
+                "volRemaining": "5",
+                "who": "Character Name",
+                "whoID": 12345678
+            }
+        ]
+
 ## Group Portfolio
 
 Actions and resources related to portfolios.
@@ -110,11 +137,11 @@ Premium subscription required.
 + Request (application/json)
 
     + Attributes
-        + name (string, required) - Name of the portfolio. Minimum 4 characters, maximum 32
-        + description (string) - Short description of the portfolio. maximum 100 characters
-        + type (number, required) - Type should be 0 for Trading Portfolio or 1 for Industry Portfolio
+        + name: Portfolio Name (string, required) - Name of the portfolio. Minimum 4 characters, maximum 32
+        + description: Portfolio Description (string) - Short description of the portfolio. maximum 100 characters
+        + type: 1 (number, required) - Type should be 0 for Trading Portfolio or 1 for Industry Portfolio
         + components (array[Portfolio Component], required) - Components for this component. Only 1 manufacturable component can be used for an Industry Portfolio
-        + efficiency (number) - A percentage from 0 to 100 for the material efficiency used by the industry portfolio
+        + efficiency: 10 (number) - A percentage from 0 to 10 for the material efficiency used by the Industry Portfolio. Can be ignored for a Trading Portfolio
 
 + Response 200 (application/json)
 
@@ -136,6 +163,29 @@ Premium subscription required.
         {
             "message": 'Your portfolio has been deleted'
         }
+
+## Get Portfolio [/portfolio/get/{id}]
+
++ Parameters
+    + id: 1 (required, number) - Portfolio ID
+
+### Get a single portfolio by its ID [GET]
+
+API access subscription required.
+
++ Response 200 (application/json)
+
+    + Attributes (Portfolio)
+
+## Get All Portfolios [/portfolio/get/all]
+
+### Returns all portfolios that you own [GET]
+
+API access subscription required.
+
++ Response 200 (application/json)
+
+    + Attributes (array[Portfolio])
 
 ## Group Subscription
 
@@ -238,22 +288,6 @@ Premium subscription required.
             "message": 'Notificaton statuses are updated'
         }
 
-## Group SDE
-
-## Market Groups [/sde/marketgroups]
-
-### Get market group data [GET]
-
-+ Response 200 (application/json)
-    + Attributes (array[Market Group])
-
-## Blueprints [/sde/blueprints]
-
-### Get blueprint data [GET]
-
-+ Response 200 (application/json)
-    + Attributes (Blueprint)
-
 ## Group API Keys
 
 ## Add [/apikey/add]
@@ -265,10 +299,10 @@ Premium subscription required for corporation keys.
 + Request (application/json)
 
     + Attributes
-        + type (number, required) - 0 for character or 1 for corporation
-        + keyID (string, required) - The api key
-        + vCode (string, required) - The verification code
-        + characterID (number) - The selected character in the case of an account key
+        + type: 0 (number, required) - 0 for character or 1 for corporation
+        + keyID: 123456 (string, required) - The api key
+        + vCode: 12345678 (string, required) - The verification code
+        + characterID: 56432138 (number) - The selected character in the case of an account key
 
 + Response 200 (application/json)
 
@@ -308,104 +342,123 @@ Premium subscription required for corporation keys.
 
 ## Data Structures
 
-### Current Market Data
-+ tradeVolume: Approximated trade volume for the time period (number)
-+ spread: Margin between buy & sell price (number)
-+ buyPercentile: Adjusted buy price (number)
-+ sellPercentile: Adjusted sell price (number)
-+ time: Timestamp when document was created (number)
-+ type: Type/item ID for this document (number)
+### Forecast Result
++ buyPercentile: 5.705 (number) - Adjusted fifth percentile buy price
++ sellPercentile: 5.9 (number) - Adjusted fifth percentile sell price
++ spread: 3.305084745762727 (number) - Margin between buy & sell price
++ tradeVolume: 0 (number) - Estimated daily trade volume for the past day
++ type: 34 (number) - Type/item ID for this item
 
-### Daily Market Data
-+ tradeVolume: Approximated trade volume for the time period (number)
-+ tradeVolumeSMA: Seven day moving average for volume, available only for daily history (number)
-+ spread: Margin between buy & sell price (number)
-+ spreadSMA: Seven day moving average for spread, available only for daily history (number)
-+ buyFifthPercentile: Adjust buy price (number)
-+ sellFifthPercentile: Adjust sell price (number)
-+ time: Timestamp when document was created (number)
-+ type: Type/item ID for this document (number)
-+ high: Highest price for this time period (number)
-+ low: Lowest price for this time period (number)
+### Current Market Data
++ tradeVolume: 1000 (number) - Approximated trade volume for the time period
++ spread: 14.7 (number) - Margin between buy & sell price
++ buyPercentile: 237683 (number) - Adjusted buy price
++ sellPercentile: 269432 (number) - Adjusted sell price
++ time: 1479995802 (number) - Timestamp when document was created
++ type: 33768 (number) - Type/item ID for this document
 
 ## Minutes Region Market Data
-+ buyAvg: Average buy price (number)
-+ buyMax: Maximum buy price (number)
-+ buyMin: Minimum buy price (number)
-+ buyPercentile: Adjusted fifth percentile buy price (number)
-+ buyVolume: Total buy volume for this item (number)
-+ region: Region ID (number)
-+ sellAvg: Average sell price (number)
-+ sellMax: Maximum sell price (number)
-+ sellMin: Minimum sell price (number)
-+ sellPercentile: Adjusted fifth percentile sell price (number)
-+ sellVolume: Total sell volume for this item (number)
-+ spread: Spread of the buy and sell percentile prices (number)
-+ spreadValue: Potential profit from the resale of this item (number)
-+ tradeValue: Total profit value traded during this time period (number)
-+ tradeVolume: Estimated volume sold during this time span (number)
++ buyAvg: 14 (number) - Average buy price
++ buyMax: 25 (number) - Maximum buy price
++ buyMin: 10 (number) - Minimum buy price
++ buyPercentile: 16 (number) - Adjusted fifth percentile buy price
++ buyVolume: 1000 (number) - Total buy volume for this item
++ region: 10000002 (number) - Region ID
++ sellAvg: 16 (number) - Average sell price
++ sellMax: 24 (number) - Maximum sell price
++ sellMin: 10 (number) - Minimum sell price
++ sellPercentile: 18 (number) - Adjusted fifth percentile sell price
++ sellVolume: 1000 (number) - Total sell volume for this item
++ spread: 8 (number) - Spread of the buy and sell percentile prices as percentage
++ spreadValue: 6 (number) - Potential profit from the resale of this item
++ tradeValue: 16000 (number) - Total profit value traded during this time period
++ tradeVolume: 1000 (number) Estimated volume sold during this time span
 
 ### Minutes Bulk Market Data
-+ type: Item type ID (number)
-+ time: ISO 8601 timestamp (string)
++ type: 34 (number) - Item type ID
++ time: 2016-11-04T22:57:33.441000 (string) - ISO 8601 timestamp
 + regions: (array[Minutes Region Market Data])
 
 ## Daily Region Market Data
-+ region: Region ID (number)
-+ buyAvg: Average buy price (number)
-+ buyMax: Maximum buy price (number)
-+ buyMin: Minimum buy price (number)
-+ buyPercentile: Adjusted fifth percentile buy price (number)
-+ buyVolume: Total buy volume for this item (number)
-+ sellAvg: Average sell price (number)
-+ sellMax: Maximum sell price (number)
-+ sellMin: Minimum sell price (number)
-+ sellPercentile: Adjusted fifth percentile sell price (number)
-+ sellVolume: Total sell volume for this item (number)
-+ spread: Spread of the buy and sell percentile prices (number)
-+ spreadValue: Potential profit from the resale of this item (number)
-+ tradeValue: Total profit value traded during this time period (number)
-+ tradeVolume: Estimated volume sold during this time span (number)
-+ volume_sma: 7 day moving average of trade volume (number)
-+ spread_sma: 7 day moving average of spread (number)
++ buyAvg: 14 (number) - Average buy price
++ buyMax: 25 (number) - Maximum buy price
++ buyMin: 10 (number) - Minimum buy price
++ buyPercentile: 16 (number) - Adjusted fifth percentile buy price
++ buyVolume: 1000 (number) - Total buy volume for this item
++ region: 10000002 (number) - Region ID
++ sellAvg: 16 (number) - Average sell price
++ sellMax: 24 (number) - Maximum sell price
++ sellMin: 10 (number) - Minimum sell price
++ sellPercentile: 18 (number) - Adjusted fifth percentile sell price
++ sellVolume: 1000 (number) - Total sell volume for this item
++ spread: 8 (number) - Spread of the buy and sell percentile prices as percentage
++ spreadValue: 6 (number) - Potential profit from the resale of this item
++ tradeValue: 16000 (number) - Total profit value traded during this time period
++ tradeVolume: 1000 (number) Estimated volume sold during this time span
++ volume_sma:  (number) - 7 day moving average of trade volume
++ spread_sma:  (number) - 7 day moving average of spread
 
 ### Daily Bulk Market Data
-+ type: Item type ID (number)
-+ time: ISO 8601 timestamp (string)
++ type: 34 (number) - Type/item ID for this document
++ time: 2016-11-04T22:57:33.441000 (string) - ISO 8601 timestamp
 + regions: (array[Daily Region Market Data])
 
 ### Portfolio Component
-+ typeID: Item ID for the component (number)
-+ quantity: Quantity of the component (number)
-
-### Item
-+ id: Item type ID (number)
-+ name: Item name (number)
-
-### Market Group Child
-+ name: Group name (string)
-+ id: Group ID (string)
-+ childGroups: (array[object])
-+ items: (array[Item])
-
-### Market Group
-+ name: Group name (string)
-+ id: Group ID (string)
-+ childGroups: (array[Market Group Child])
++ typeID: 13774 (number) - Item ID for the component
++ quantity: 10 (number) - Quantity of the component
 
 ### Material
-+ quantity: Number of this item required (number)
-+ typeID: ID for this item (number)
++ quantity: 19501 (number) - Number of this item required
++ typeID: 34 (number) - Type ID for this item
 
-### Blueprint
-+ materials: List of required materials (array[Material])
-+ quantity: Number of this item that is manufactured from the blueprint (number)
-+ name: Name of the manufactured item (string)
+### Material Array (array)
++ (Material)
+
+### Simulation (object)
++ sell: 355000 (number) - Margin trading adjusted sell value
++ buy: 315000 (number) - Margin trading adjusted buy value
++ profit: 30000 (number) - Estimated profit made from a trade including tax, broker fees, and overhead
++ tax: 5000 (number) - Sales tax for this item
++ broker: 5000 (number) - Broker fees paid for this item
+
+### Component
++ volume: 27297 (number) - The estimated daily trading volume for this item
++ quantity: 81 (number) - The quantity of this component
++ buildSpread: 13.44 (number) - The potential profit of building this component vs buying it for an industrial portfolio
++ materialCost: 307786.43 (number) - The estimated cost to build this component from raw materials for an industrial portfolio
++ totalPrice: 355606.38 (number) - The total sell price at this quantity for this component
++ unitPrice: 4390.98 (number) - The individual cost for this component
++ typeID: 11552 (number) - The type ID for this component
++ (Simulation)
+
+### Component Array (array)
++ (Component)
 
 ### API Key
-+ keyID: The api key (string)
-+ vCode: Verification code (string)
-+ type: 0 for character or 1 for corporation (number)
-+ expires: Expiry date of the api key (string)
-+ characterID: Character that is attached to this key if applicable (number)
-+ id: Unique id for this key to be used by other endpoints (string)
++ keyID: 1234567 (string) - The api key
++ vCode: 12345678910 (string) - Verification code
++ type: 0 (number) - 0 for character or 1 for corporation
++ expires: datetime (string) - Expiry date of the api key
++ characterID: 12345678 (number) - Character that is attached to this key if applicable
++ id: 58211dd59bae1bec255e2000 (string) - Unique id for this key to be used by other endpoints
+
+## Portfolio
++ portfolioID: 5 (number) - Identifying ID for this portfolio
++ time: 2016-11-04T22:57:33.441000 (string) - ISO 8601 date this portfolio was created
++ user_id: 12345678 (number) - Main character ID on your account this portfolio is attached to
++ name: Portfolio Name (string) - Name given to this portfolio
++ description: Portfolio Description (string) - Description given to this portfolio
++ type: 1 (number) - 1 for industry portfolio or 0 for a trading portfolio
++ startingValue: 23923832.020000003 (number) - Initial sell value calculated for this portfolio at creation
++ materialCost: 192114.93 (number) - Buy cost of all the materials to build each component in an industry portfolio
++ industryQuantity: 1 (number) - Number of runs for the item to manufacture for an industrial portfolio
++ manufacturedQuantity: 1 (number) - Actual output quantity for this blueprint multiplied by number of runs for an industrial portfolio
++ industrySpread: 24 (number) - Profit margin between the buy value of the components compared to the sell value of the manufactured item for an industrial portfolio
++ installationCost: 1000 (number) - Cost to install this blueprint for an industrial portfolio
++ efficiency: 10 (number) - Material efficiency percentage for an industrial portfolio
++ industryTypeID: 11379 (number) - The item to manufacture for an industrial portfolio
++ currentBuyValue: 20846.20 (number) - The total buy value for all components in this portfolio
++ averageSpread: 15.19 (number) - The average spread for each component in this portfolio
++ currentValue: 26846.20 (number) - The total sell value for all of the components in a trading portfolio or for the manufactured item in an industrial portfolio
++ (Component Array)
++ (Material Array)
