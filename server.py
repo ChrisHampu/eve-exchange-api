@@ -41,6 +41,7 @@ audit_log_collection = mongo_db.audit_log
 aggregates_minutes = mongo_db.aggregates_minutes
 aggregates_hourly = mongo_db.aggregates_hourly
 aggregates_daily = mongo_db.aggregates_daily
+user_orders_collection = mongo_db.user_orders
 
 portfolio_limit = 100 # Max number of portfolios a user can have
 portfolio_component_limit = 25 # number of components per portfolio
@@ -354,6 +355,25 @@ def market_history_daily(typeid, user_id, settings):
 
     return jsonify(data)
 
+@app.route('/market/orders/self', methods=['GET'])
+@verify_jwt
+def market_self_orders(user_id, settings):
+
+    if settings.get('api_access', False) == False:
+        return jsonify({'error': "Active API access subscription is required to access this endpoint", 'code': 405})
+
+    try:
+        orders = list(user_orders_collection.find({'user_id': user_id}, fields={'_id': False}))
+
+        if orders is None or len(orders) == 0:
+            raise Exception()
+
+    except Exception:
+        traceback.print_exc()
+        return jsonify([])
+
+    return jsonify(orders)
+
 @app.route('/portfolio/create', methods=['POST'])
 @verify_jwt
 def create_portfolio(user_id, settings):
@@ -571,6 +591,49 @@ def portfolio_delete(id, user_id, settings):
         return jsonify({ 'error': "There was a database error while processing your deletion request", 'code': 400 })
 
     return jsonify({ 'message': 'Your portfolio has been deleted' })
+
+@app.route('/portfolio/get/<int:id>', methods=['GET'])
+@verify_jwt
+def portfolio_get_single(id, user_id, settings):
+
+    if settings.get('api_access', False) == False:
+        return jsonify({'error': "Active API access subscription is required to access this endpoint", 'code': 405})
+
+    try:
+        portfolio = portfolio_collection.find_one({'user_id': user_id, 'portfolioID': id}, fields={'_id': False, 'hourlyChart': False, 'dailyChart': False})
+
+        if portfolio is None:
+            raise Exception()
+
+    except Exception:
+        traceback.print_exc()
+        return jsonify({ 'error': "Failed to look up your portfolio. Double check that you have the correct portfolio ID and that you have permissions for it", 'code': 400 })
+
+    portfolio['time'] = portfolio.get('time', datetime.utcnow()).isoformat()
+
+    return jsonify(portfolio)
+
+@app.route('/portfolio/get/all', methods=['GET'])
+@verify_jwt
+def portfolio_get_all(user_id, settings):
+
+    if settings.get('api_access', False) == False:
+        return jsonify({'error': "Active API access subscription is required to access this endpoint", 'code': 405})
+
+    try:
+        portfolios = list(portfolio_collection.find({'user_id': user_id}, fields={'_id': False, 'hourlyChart': False, 'dailyChart': False}))
+
+        if portfolios is None or len(portfolios) == 0:
+            raise Exception()
+
+    except Exception:
+        traceback.print_exc()
+        return jsonify({ 'error': "Failed to look up your portfolios. Double check that you've created at least one portfolio", 'code': 400 })
+
+    for p in portfolios:
+        p['time'] = p.get('time', datetime.utcnow()).isoformat()
+
+    return jsonify(portfolios)
 
 @app.route('/subscription/subscribe', methods=['POST'])
 @verify_jwt
@@ -1115,7 +1178,7 @@ def apikey_add(user_id, settings):
 
     return jsonify({'message': 'API key has been added to your account'})
 
-@app.route('/apikey/remove/<string:key_id>', methods=['GET', 'POST'])
+@app.route('/apikey/remove/<string:key_id>', methods=['POST'])
 @verify_jwt
 def apikey_remove(key_id, user_id, settings):
 
@@ -1165,7 +1228,7 @@ def apikey_remove(key_id, user_id, settings):
 
     return jsonify({'message': 'API key has been removed from your account'})
 
-@app.route('/apikey/get', methods=['GET', 'POST'])
+@app.route('/apikey/get', methods=['GET'])
 @verify_jwt
 def apikey_get_all(user_id, settings):
 
@@ -1175,7 +1238,7 @@ def apikey_get_all(user_id, settings):
 
     return jsonify(settings['profiles'])
 
-@app.route('/apikey/get/<string:key_id>', methods=['GET', 'POST'])
+@app.route('/apikey/get/<string:key_id>', methods=['GET'])
 @verify_jwt
 def apikey_get_one(key_id, user_id, settings):
 
@@ -1196,7 +1259,7 @@ def apikey_get_one(key_id, user_id, settings):
 
     return jsonify({'message': 'Failed to find the requested API key. Make sure to use its unique ID in the request'})
 
-# SDE
+# SDE - deprecated
 
 @app.route('/sde/blueprints', methods=['GET'])
 def sde_blueprints():
