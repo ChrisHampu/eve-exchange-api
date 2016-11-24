@@ -346,7 +346,7 @@ Premium subscription required for corporation keys.
 + buyPercentile: 5.705 (number) - Adjusted fifth percentile buy price
 + sellPercentile: 5.9 (number) - Adjusted fifth percentile sell price
 + spread: 3.305084745762727 (number) - Margin between buy & sell price
-+ tradeVolume: 0 (number) - Estimated daily trade volume for the past day
++ tradeVolume: 1000 (number) - Estimated daily trade volume for the past day
 + type: 34 (number) - Type/item ID for this item
 
 ### Current Market Data
@@ -354,7 +354,6 @@ Premium subscription required for corporation keys.
 + spread: 14.7 (number) - Margin between buy & sell price
 + buyPercentile: 237683 (number) - Adjusted buy price
 + sellPercentile: 269432 (number) - Adjusted sell price
-+ time: 1479995802 (number) - Timestamp when document was created
 + type: 33768 (number) - Type/item ID for this document
 
 ## Minutes Region Market Data
@@ -376,7 +375,7 @@ Premium subscription required for corporation keys.
 
 ### Minutes Bulk Market Data
 + type: 34 (number) - Item type ID
-+ time: 2016-11-04T22:57:33.441000 (string) - ISO 8601 timestamp
++ time: `2016-11-04T22:57:33.441000` (string) - ISO 8601 timestamp
 + regions: (array[Minutes Region Market Data])
 
 ## Daily Region Market Data
@@ -400,7 +399,7 @@ Premium subscription required for corporation keys.
 
 ### Daily Bulk Market Data
 + type: 34 (number) - Type/item ID for this document
-+ time: 2016-11-04T22:57:33.441000 (string) - ISO 8601 timestamp
++ time: `2016-11-04T22:57:33.441000` (string) - ISO 8601 timestamp
 + regions: (array[Daily Region Market Data])
 
 ### Portfolio Component
@@ -435,16 +434,20 @@ Premium subscription required for corporation keys.
 + (Component)
 
 ### API Key
-+ keyID: 1234567 (string) - The api key
-+ vCode: 12345678910 (string) - Verification code
++ key_id: 1234567 (string) - The api key
++ vcode: 12345678910 (string) - Verification code
 + type: 0 (number) - 0 for character or 1 for corporation
-+ expires: datetime (string) - Expiry date of the api key
-+ characterID: 12345678 (number) - Character that is attached to this key if applicable
++ character_id: 12345678 (number) - Character that is attached to this key
++ character_name: Char Name (string) - Character name
++ corporation_id: 12345678 (number) - Corporation of the character that is attached to this key
++ corporation_name: Corp Name (string) - Corporation name
++ wallet_balance: 1000 (number) - Wallet balance of the character or corporation
++ wallet_key: 1000 (number) - Wallet key used to pull wallet balance
 + id: 58211dd59bae1bec255e2000 (string) - Unique id for this key to be used by other endpoints
 
 ## Portfolio
 + portfolioID: 5 (number) - Identifying ID for this portfolio
-+ time: 2016-11-04T22:57:33.441000 (string) - ISO 8601 date this portfolio was created
++ time: `2016-11-04T22:57:33.441000` (string) - ISO 8601 date this portfolio was created
 + user_id: 12345678 (number) - Main character ID on your account this portfolio is attached to
 + name: Portfolio Name (string) - Name given to this portfolio
 + description: Portfolio Description (string) - Description given to this portfolio
