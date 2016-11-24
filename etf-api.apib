@@ -296,6 +296,19 @@ Premium subscription required.
             "message": 'Notificaton statuses are updated'
         }
 
+## Get Notifications [/notification/get/all]
+
+### Returns all notifications for an account [GET]
+
++ Response 200 (application/json)
+
+    + Attributes
+        + id: 57fecb8e533fadda411ce (string) - Notification ID that can be used by other requests
+        + time: `2016-10-12T23:47:26.539000` (string) - ISO 8601 timestamp that it was created
+        + message: Notification message (string) - Actual notification message
+        + read: false (boolean) - Whether this notification has been marked as read
+        + user_id: 57968413 (number) - Main character ID that this notification is for
+
 ## Group API Keys
 
 ## Add [/apikey/add]

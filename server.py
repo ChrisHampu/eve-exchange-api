@@ -1012,6 +1012,28 @@ def notification_set_unread(not_id, user_id, settings):
 
     return jsonify({ 'message': 'Notification status is updated' })
 
+
+@app.route('/notification/get/all', methods=['GET'])
+@verify_jwt
+def notification_get_all(user_id, settings):
+
+    try:
+        notifications = list(notification_collection.find({'user_id': user_id}))
+
+        if notifications == None:
+            return jsonify([])
+
+    except Exception:
+        traceback.print_exc()
+        return jsonify([])
+
+    for n in notifications:
+        n['id'] = str(n['_id'])
+        del n['_id']
+        n['time'] = n['time'].isoformat()
+
+    return jsonify(notifications)
+
 # API Keys
 
 @app.route('/apikey/add', methods=['POST'])
