@@ -1347,7 +1347,15 @@ def insert_defaults(user_id, user_name):
         'user_id': user_id,
         'premium': False,
         'api_key': str(ObjectId()),
-        'profiles': []
+        'profiles': [],
+        'guidebook': {
+            'disable': False,
+            'subscription': True,
+            'portfolios': True,
+            'forecast': True,
+            'profiles': True,
+            'market_browser': True
+        }
     }
 
     profit_alltime = {
