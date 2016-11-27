@@ -1348,6 +1348,19 @@ def insert_defaults(user_id, user_name):
         'premium': False,
         'api_key': str(ObjectId()),
         'profiles': [],
+        'market': {
+            'region': 10000002
+        },
+        'general': {
+            'auto_renew': True
+        },
+        'chart_visuals': {
+            'price': True,
+            'spread': True,
+            'spread_sma': True,
+            'volume': True,
+            'volume_sma': True
+        },
         'guidebook': {
             'disable': False,
             'subscription': True,
