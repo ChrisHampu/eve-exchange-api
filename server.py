@@ -1281,6 +1281,180 @@ def apikey_get_one(key_id, user_id, settings):
 
     return jsonify({'message': 'Failed to find the requested API key. Make sure to use its unique ID in the request'})
 
+@app.route('/settings/save', methods=['POST'])
+@verify_jwt
+def settings_savee(user_id, settings):
+
+    try:
+        if request.is_json == False:
+            return jsonify({'error': "Request Content-Type header must be set to 'application/json'", 'code': 400})
+
+    except:
+        return jsonify({ 'error': "There was a problem parsing your json request", 'code': 400 })
+
+    try:
+        pinned_charts = request.json.get('pinned_charts', [])
+
+        # All market settings
+        market = request.json.get('market', None)
+
+        if market is None:
+            return jsonify({'error': "There are important settings missing from your request", 'code': 400})
+
+        region = market.get('region', 10000002)
+        default_tab = market.get('default_tab', 0)
+        simulation_broker_fee = market.get('simulation_broker_fee', 0)
+        simulation_sales_tax = market.get('simulation_sales_tax', 0)
+        simulation_margin = market.get('simulation_margin', 0)
+        simulation_strategy = market.get('simulation_strategy', 0)
+        simulation_margin_type = market.get('simulation_margin_type', 0)
+        simulation_overhead = market.get('simulation_overhead', 0)
+        simulation_wanted_profit = market.get('simulation_wanted_profit', 0)
+
+        if region not in supported_regions:
+            return jsonify({'error': "Region is not a valid value", 'code': 400})
+
+        if (isinstance(simulation_broker_fee, int) == False or isinstance(simulation_broker_fee, float) == False) and 0 > simulation_broker_fee > 100:
+            return jsonify({'error': "Simulation Broker Fee is not a valid value", 'code': 400})
+
+        if (isinstance(simulation_sales_tax, int) == False or isinstance(simulation_sales_tax, float) == False) and 0 > simulation_sales_tax > 100:
+            return jsonify({'error': "Simulation Sales Tax is not a valid value", 'code': 400})
+
+        if isinstance(simulation_margin_type, int) == False and 0 > simulation_margin_type > 1:
+            return jsonify({'error': "Simulation Margin Type is not a valid value", 'code': 400})
+
+        if simulation_margin_type == 0:
+            if (isinstance(simulation_margin, int) == False or isinstance(simulation_margin, float) == False) and 0 > simulation_margin > 100000000000:
+                return jsonify({'error': "Simulation Margin is not a valid value", 'code': 400})
+        else:
+            if (isinstance(simulation_margin, int) == False or isinstance(simulation_margin, float) == False) and 0 > simulation_margin > 100:
+                return jsonify({'error': "Simulation Margin is not a valid value", 'code': 400})
+
+        if isinstance(simulation_strategy, int) == False and 0 > simulation_strategy > 1:
+            return jsonify({'error': "Simulation Strategy is not a valid value", 'code': 400})
+
+        if (isinstance(simulation_overhead, int) == False or isinstance(simulation_overhead, float) == False) and 0 > simulation_overhead > 100000000000:
+            return jsonify({'error': "Simulation Overhead is not a valid value", 'code': 400})
+
+        if (isinstance(simulation_wanted_profit, int) == False or isinstance(simulation_wanted_profit, float) == False) and 0 > simulation_wanted_profit > 100:
+            return jsonify({'error': "Simulation Wanted Profit is not a valid value", 'code': 400})
+
+        # General settings
+        general = request.json.get('general', None)
+
+        if general is None:
+            return jsonify({'error': "There are important settings missing from your request", 'code': 400})
+
+        auto_renew = general.get('auto_renew', True)
+
+        if isinstance(auto_renew, bool) == False:
+            return jsonify({'error': "Auto Renew is not a valid value", 'code': 400})
+
+        # Chart visuals
+        chart_visuals = request.json.get('chart_visuals', None)
+
+        if chart_visuals is None:
+            return jsonify({'error': "There are important settings missing from your request", 'code': 400})
+
+        price = chart_visuals.get('price', True)
+        spread = chart_visuals.get('spread', True)
+        spread_sma = chart_visuals.get('spread_sma', True)
+        volume = chart_visuals.get('volume', True)
+        volume_sma = chart_visuals.get('volume_sma', True)
+
+        if isinstance(price, bool) == False:
+            return jsonify({'error': "Price is not a valid value", 'code': 400})
+
+        if isinstance(spread, bool) == False:
+            return jsonify({'error': "Spread is not a valid value", 'code': 400})
+
+        if isinstance(spread_sma, bool) == False:
+            return jsonify({'error': "Spread SMA is not a valid value", 'code': 400})
+
+        if isinstance(volume, bool) == False:
+            return jsonify({'error': "Volume is not a valid value", 'code': 400})
+
+        if isinstance(volume, bool) == False:
+            return jsonify({'error': "Volume is not a valid value", 'code': 400})
+
+        if isinstance(volume_sma, bool) == False:
+            return jsonify({'error': "Volume SMA is not a valid value", 'code': 400})
+
+        # Guidebook
+        guidebook = request.json.get('guidebook', None)
+
+        if guidebook is None:
+            return jsonify({'error': "There are important settings missing from your request", 'code': 400})
+
+        disable = guidebook.get('disable', False)
+        profiles = guidebook.get('profiles', True)
+        market_browser = guidebook.get('market_browser', True)
+        forecast = guidebook.get('forecast', True)
+        portfolios = guidebook.get('portfolios', True)
+        subscription = guidebook.get('subscription', True)
+
+        if isinstance(disable, bool) == False:
+            return jsonify({'error': "Guidebook Disable is not a valid value", 'code': 400})
+
+        if isinstance(profiles, bool) == False:
+            return jsonify({'error': "Guidebook Profiles is not a valid value", 'code': 400})
+
+        if isinstance(market_browser, bool) == False:
+            return jsonify({'error': "Guidebook Market Browser is not a valid value", 'code': 400})
+
+        if isinstance(forecast, bool) == False:
+            return jsonify({'error': "Guidebook Forecast is not a valid value", 'code': 400})
+
+        if isinstance(portfolios, bool) == False:
+            return jsonify({'error': "Guidebook Portfolios is not a valid value", 'code': 400})
+
+        if isinstance(subscription, bool) == False:
+            return jsonify({'error': "Guidebook Subscription is not a valid value", 'code': 400})
+
+    except:
+        traceback.print_exc()
+        return jsonify({'error': "There was a problem with parsing your settings", 'code': 400})
+
+    try:
+        mongo_db.settings.find_and_modify({'user_id': user_id}, {
+            '$set': {
+                'pinned_charts': pinned_charts,
+                'market': {
+                    'region': region,
+                    'default_tab': default_tab,
+                    'simulation_broker_fee': simulation_broker_fee,
+                    'simulation_sales_tax': simulation_sales_tax,
+                    'simulation_margin': simulation_margin,
+                    'simulation_strategy': simulation_strategy,
+                    'simulation_margin_type': simulation_margin_type,
+                    'simulation_overhead': simulation_overhead,
+                    'simulation_wanted_profit': simulation_wanted_profit
+                },
+                'general': {
+                    'auto_renew': auto_renew
+                },
+                'chart_visuals': {
+                    'price': price,
+                    'spread': spread,
+                    'spread_sma': spread_sma,
+                    'volume': volume,
+                    'volume_sma': volume_sma
+                },
+                'guidebook': {
+                    'disable': disable,
+                    'profiles': profiles,
+                    'market_browser': market_browser,
+                    'forecast': forecast,
+                    'portfolios': portfolios,
+                    'subscription': subscription
+                }
+            }
+        })
+    except:
+        return jsonify({'error': "There was a problem with saving your settings", 'code': 400})
+
+    return jsonify({'message': 'New settings have been applied'})
+
 # SDE - deprecated
 
 @app.route('/sde/blueprints', methods=['GET'])
