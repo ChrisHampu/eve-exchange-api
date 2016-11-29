@@ -1394,22 +1394,55 @@ def settings_savee(user_id, settings):
         subscription = guidebook.get('subscription', True)
 
         if isinstance(disable, bool) == False:
-            return jsonify({'error': "Guidebook Disable is not a valid value", 'code': 400})
+            disable = False
 
         if isinstance(profiles, bool) == False:
-            return jsonify({'error': "Guidebook Profiles is not a valid value", 'code': 400})
+            profiles = False
 
         if isinstance(market_browser, bool) == False:
-            return jsonify({'error': "Guidebook Market Browser is not a valid value", 'code': 400})
+            market_browser = False
 
         if isinstance(forecast, bool) == False:
-            return jsonify({'error': "Guidebook Forecast is not a valid value", 'code': 400})
+            forecast = False
 
         if isinstance(portfolios, bool) == False:
-            return jsonify({'error': "Guidebook Portfolios is not a valid value", 'code': 400})
+            portfolios = False
 
         if isinstance(subscription, bool) == False:
-            return jsonify({'error': "Guidebook Subscription is not a valid value", 'code': 400})
+           subscription = False
+
+        # Forecast
+        forecast_saved = request.json.get('forecast', None)
+
+        if forecast_saved is None:
+            return jsonify({'error': "There are important settings missing from your request", 'code': 400})
+
+        min_volume = forecast_saved.get('min_volume', 50)
+        max_volume = forecast_saved.get('max_volume', 200)
+        min_spread = forecast_saved.get('min_spread', 10)
+        max_spread = forecast_saved.get('max_volume', 20)
+        min_buy = forecast_saved.get('min_buy', 5000000)
+        max_buy = forecast_saved.get('max_buy', 75000000)
+
+        print(forecast_saved)
+
+        if (isinstance(min_volume, int) == False or isinstance(min_volume, float) == False) and 0 > min_volume > 100000000:
+            min_volume = None
+
+        if (isinstance(max_volume, int) == False or isinstance(max_volume, float) == False) and 0 > min_volume > 100000000:
+            max_volume = None
+
+        if (isinstance(min_spread, int) == False or isinstance(min_spread, float) == False) and 0 > min_spread > 100:
+            min_spread = None
+
+        if (isinstance(max_spread, int) == False or isinstance(max_spread, float) == False) and 0 > min_buy > 100:
+            max_spread = None
+
+        if (isinstance(min_buy, int) == False or isinstance(min_buy, float) == False) and 0 > min_buy > 100000000000:
+            min_buy = None
+
+        if (isinstance(max_buy, int) == False or isinstance(max_buy, float) == False) and 0 > min_buy > 100000000000:
+            max_buy = None
 
     except:
         traceback.print_exc()
@@ -1447,6 +1480,14 @@ def settings_savee(user_id, settings):
                     'forecast': forecast,
                     'portfolios': portfolios,
                     'subscription': subscription
+                },
+                'forecast': {
+                    'min_volume': min_volume,
+                    'max_volume': max_volume,
+                    'min_spread': min_spread,
+                    'max_spread': max_spread,
+                    'min_buy': min_buy,
+                    'max_buy': max_buy
                 }
             }
         })
