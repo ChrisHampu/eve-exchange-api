@@ -10,6 +10,7 @@ import math
 import time
 import json
 import jwt
+from fuzzywuzzy import process, fuzz
 from flask import Flask, Response, request, jsonify, current_app, redirect, url_for, session
 from flask_cors import CORS
 from flask_oauthlib.client import OAuth
@@ -85,6 +86,8 @@ market_ids = []
 market_groups = []
 market_groups_json = []
 
+system_name_to_id = {}
+
 with open('sde/blueprints.js', 'r', encoding='utf-8') as f:
     read_data = f.read()
     blueprints_json = read_data
@@ -105,6 +108,18 @@ with open('sde/market_groups.js', 'r', encoding='utf-8') as f:
 
     for group in market_groups:
         _getGroups(group, market_ids)
+
+try:
+    res = requests.get('https://crest-tq.eveonline.com/industry/systems/', timeout=10)
+
+    doc = json.loads(res.text)
+
+    for item in doc['items']:
+        system_name_to_id[item['solarSystem']['name']] = item['solarSystem']['id']
+
+except:
+    traceback.print_exc()
+    exit()
 
 re = None
 
@@ -406,6 +421,9 @@ def create_portfolio(user_id, settings):
     if 'efficiency' in request.json:
         efficiency = request.json['efficiency']
 
+    build_system = request.json.get('buildSystem', None)
+    sell_price = request.json.get('sellPrice', None)
+
     if isinstance(name, str) == False:
         return jsonify({ 'error': "Required parameter 'name' is not a valid string", 'code': 400 })
     if isinstance(description, str) == False:
@@ -429,6 +447,14 @@ def create_portfolio(user_id, settings):
     else:
         if len(components) > portfolio_component_limit:
             return jsonify({ 'error': "The limit for the number of components in a portfolio is %s" % portfolio_component_limit, 'code': 400 })
+
+    if build_system is not None:
+        if build_system not in system_name_to_id:
+            return jsonify({'error': "Selected build system '%s' is invalid; check for correct spelling & case-sensitiveness" % build_system, 'code': 400})
+
+    if sell_price is not None:
+        if (isinstance(sell_price, int) == False or isinstance(sell_price, float) == False) and sell_price <= 0:
+            return jsonify({'error': "Override sell price should not be negative or zero", 'code': 400})
 
     used_ids = []
     _components = []
@@ -531,7 +557,9 @@ def create_portfolio(user_id, settings):
             'industryTypeID': industryTypeID,
             'industryValue': 0,
             'startingValue': 0,
-            'manufacturedQuantity': manufacturedQuantity
+            'manufacturedQuantity': manufacturedQuantity,
+            'overrideSellPrice': 0 if sell_price is None else sell_price,
+            'buildSystem': 0 if build_system is None else system_name_to_id[build_system]
         }
 
         portfolio_collection.insert(portfolio_doc)
@@ -1424,8 +1452,6 @@ def settings_savee(user_id, settings):
         min_buy = forecast_saved.get('min_buy', 5000000)
         max_buy = forecast_saved.get('max_buy', 75000000)
 
-        print(forecast_saved)
-
         if (isinstance(min_volume, int) == False or isinstance(min_volume, float) == False) and 0 > min_volume > 100000000:
             min_volume = None
 
@@ -1542,6 +1568,24 @@ def do_oauth_authorized():
     }, auth_jwt_secret, algorithm='HS256')
 
     return redirect('%s/?token=%s' % (redirect_host, token.decode('ascii')), code=302)
+
+@app.route('/search/systems', methods=['GET'])
+def search_systems():
+
+    # Validation
+    try:
+        name = request.args.get('name', None)
+    except:
+        return jsonify({ 'error': "Invalid type used in query parameters", 'code': 400 })
+
+    if name is None:
+        return jsonify({'error': "No search string was provided", 'code': 400})
+
+    tokens = process.extract(name, system_name_to_id.keys(), limit=6, scorer=fuzz.ratio)
+
+    results = [{'name': token[0], 'id': system_name_to_id[token[0]]} for token in tokens]
+
+    return jsonify(results)
 
 @evesso.tokengetter
 def get_evesso_oauth_token():

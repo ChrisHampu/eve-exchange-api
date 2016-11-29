@@ -5,3 +5,5 @@ pymongo==2.9.4
 requests>=2.11.1
 pyjwt>=1.4.2
 gevent>=1.1.2
+fuzzywuzzy>=0.14.0
+python-Levenshtein>=0.12.0
