@@ -14,6 +14,7 @@ from fuzzywuzzy import process, fuzz
 from flask import Flask, Response, request, jsonify, current_app, redirect, url_for, session
 from flask_cors import CORS
 from flask_oauthlib.client import OAuth
+from werkzeug.contrib.fixers import ProxyFix
 from werkzeug.security import gen_salt
 from pymongo import MongoClient, DESCENDING
 from bson import ObjectId
@@ -62,6 +63,7 @@ admin_secret = os.environ.get('ETF_API_ADMIN_SECRET', 'admin_secret')
 
 # Application
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app)
 app.secret_key = os.environ.get('ETF_API_JWT_SECRET', 'production')
 CORS(app)
 oauth = OAuth(app)
@@ -79,13 +81,8 @@ evesso = oauth.remote_app('evesso',
     authorize_url='https://login.eveonline.com/oauth/authorize'
 )
 
-blueprints = []
-blueprints_json = {}
-
+# SDE
 market_ids = []
-market_groups = []
-market_groups_json = []
-
 system_name_to_id = {}
 
 with open('sde/blueprints.js', 'r', encoding='utf-8') as f:
@@ -108,6 +105,11 @@ with open('sde/market_groups.js', 'r', encoding='utf-8') as f:
 
     for group in market_groups:
         _getGroups(group, market_ids)
+
+with open('sde/market_id_to_volume.json', 'r', encoding='utf-8') as f:
+    read_data = f.read()
+    market_id_to_volume_json = read_data
+    market_id_to_volume = dict({int(k):v for k,v in json.loads(market_id_to_volume_json).items()})
 
 try:
     res = requests.get('https://crest-tq.eveonline.com/industry/systems/', timeout=10)
@@ -170,6 +172,9 @@ def verify_jwt(fn):
             elif split[0] == "Key":
 
                 try:
+                    if split[1] is None or len(split[1]) == 0:
+                        return jsonify({'error': "Unable to verify your API key. Please check that it is valid and typed correctly", 'code': 400})
+
                     user_settings = mongo_db.settings.find_one({'api_key': split[1]})
 
                     if user_settings is None:
@@ -295,6 +300,167 @@ def forecast(user_id, settings):
     docs = [{key.decode('ascii'):float(row[key]) for key in (b'type', b'spread', b'tradeVolume', b'buyPercentile', b'spread_sma', b'volume_sma', b'sellPercentile')} for row in pip.execute()]
 
     return jsonify(docs)
+
+def regionToStationHub(region):
+    return {
+        10000002: 60003760,
+        10000043: 60008494,
+        10000032: 60011866,
+        10000042: 60005686,
+        10000030: 60004588
+    }.get(region, 0)
+
+@app.route('/market/forecast/regional', methods=['GET'])
+@verify_jwt
+def forecast_region(user_id, settings):
+
+    min_profit = 100000
+
+    # Validation
+    try:
+        start_region = int(request.args.get('start', 0))
+        end_region = int(request.args.get('end', 0))
+        max_volume = int(request.args.get('maxvolume', 100000))
+        max_price = int(request.args.get('maxprice', 100000000))
+    except:
+        return jsonify({ 'error': "Invalid query parameters or missing parameter", 'code': 400 })
+
+    if start_region == end_region:
+        return jsonify({'error': "The start and end regions can't be the same", 'code': 400})
+
+    if start_region not in supported_regions:
+        return jsonify({'error': "The start region given is not supported or is invalid", 'code': 400})
+
+    if end_region not in supported_regions:
+        return jsonify({'error': "The end region given is not supported or is invalid", 'code': 400})
+
+    if max_volume < 100:
+        return jsonify({'error': "The maximum volume should be at least 100 in order to find reasonable opportunities", 'code': 400})
+
+    if max_price < 100000:
+        return jsonify({'error': "The maximum price should be at least 100000 in order to find reasonable opportunities", 'code': 400})
+
+    start_order_map = {} # buy orders
+    end_order_map = {} # sell orders
+
+    start_hub = regionToStationHub(start_region)
+    end_hub = regionToStationHub(end_region)
+
+    for order in mongo_db.orders.find({'region': start_region, 'buy': False}, projection={'_id': False, 'time': False, 'id': False, 'region': False}):
+
+        if order['stationID'] != start_hub and order['stationID'] < 1000000000000:
+            continue
+
+        if order['type'] in start_order_map:
+            start_order_map[order['type']].append(order)
+        else:
+            start_order_map[order['type']] = [order]
+
+    for order in mongo_db.orders.find({'region': end_region, 'buy': True}, projection={'_id': False, 'time': False, 'id': False, 'region': False}):
+
+        if order['stationID'] != end_hub and order['stationID'] < 1000000000000:
+            continue
+
+        if order['type'] in end_order_map:
+            end_order_map[order['type']].append(order)
+        else:
+            end_order_map[order['type']] = [order]
+
+    trades = []
+
+    # Find common type id's in the buy & sell orders for matching
+    for _type in set(start_order_map.keys()).intersection(end_order_map.keys()):
+
+        # Find the lowest sell price
+        min_price = min(map(lambda doc: doc['price'],  start_order_map[_type]))
+
+        # Filter out type's outside the given budget
+        if min_price > max_price:
+            continue
+
+        #  Find the highest buy price
+        max_buy = max(map(lambda doc: doc['price'],  end_order_map[_type]))
+
+        # If profit is negligible, ignore this type
+        if max_buy - min_price < min_profit:
+            continue
+
+        # Sort the list of orders by price for easy iteration
+        start = sorted(start_order_map[_type], key=lambda doc: doc['price'])
+        end = list(reversed(sorted(end_order_map[_type], key=lambda doc: doc['price'])))
+
+        start_index = 0
+        end_index = 0
+
+        start_volume = start[start_index]['volume']
+        end_volume = end[end_index]['volume']
+
+        while end_index < len(end) and start_index < len(start):
+
+            if end[end_index]['price'] - start[start_index]['price'] < min_profit:
+                break
+
+            needed_volume = market_id_to_volume[_type]
+            max_per_trade = math.floor(max_volume / needed_volume)
+
+            # If a single of this item exceeds the max weight given, skip it
+            if needed_volume > max_volume:
+                break
+
+            if start_volume >= end_volume:
+
+                count = end_volume
+
+                if count > max_per_trade:
+                    count = max_per_trade
+
+                if count * start[start_index]['price'] > max_price:
+                    count = math.floor(max_price / start[start_index]['price'])
+
+                end_volume = 0
+                start_volume -= count
+
+            elif start_volume < end_volume:
+
+                count = start_volume
+
+                if count > max_per_trade:
+                    count = max_per_trade
+
+                if count * start[start_index]['price'] > max_price:
+                    count = math.floor(max_price / start[start_index]['price'])
+
+                end_volume -= count
+                start_volume = 0
+
+            if count <= 0:
+                break
+
+            trades.append({
+                'totalProfit': (end[end_index]['price'] - start[start_index]['price']) * count,
+                'perProfit': end[end_index]['price'] - start[start_index]['price'],
+                'perVolumeProfit': (end[end_index]['price'] - start[start_index]['price']) / needed_volume,
+                'quantity': count,
+                'volume': count * needed_volume,
+                'type': _type,
+                'buyPrice': start[start_index]['price'],
+                'sellPrice': end[end_index]['price'],
+            })
+
+            if end_volume <= 0:
+
+                end_index += 1
+
+                if end_index < len(end):
+                    end_volume = end[end_index]['volume']
+
+            if start_volume <= 0:
+                start_index += 1
+
+                if start_index < len(start):
+                    start_volume = start[start_index]['volume']
+
+    return jsonify(trades)
 
 @app.route('/market/current/<int:region>/<int:typeid>', methods=['GET'])
 @verify_jwt
@@ -1472,6 +1638,28 @@ def settings_savee(user_id, settings):
         if (isinstance(max_buy, int) == False or isinstance(max_buy, float) == False) and 0 > min_buy > 100000000000:
             max_buy = None
 
+        forecast_regional = request.json.get('forecast_regional', None)
+
+        if forecast_regional is None:
+            return jsonify({'error': "There are important settings missing from your request", 'code': 400})
+
+        max_regional_volume = forecast_regional.get('max_volume', 100000)
+        max_regional_price = forecast_saved.get('max_price', 1000000000)
+        start_region = forecast_saved.get('start_region', 10000043)
+        end_region = forecast_saved.get('end_region', 10000002)
+
+        if (isinstance(max_regional_volume, int) == False or isinstance(max_regional_volume, float) == False) and 100 > min_volume > 10000000:
+            max_regional_volume = None
+
+        if (isinstance(max_regional_price, int) == False or isinstance(max_regional_price, float) == False) and 100000 > max_regional_price > 1000000000000:
+            max_regional_price = None
+
+        if start_region not in supported_regions:
+            start_region = None
+
+        if end_region not in supported_regions:
+            end_region = None
+
     except:
         traceback.print_exc()
         return jsonify({'error': "There was a problem with parsing your settings", 'code': 400})
@@ -1516,6 +1704,12 @@ def settings_savee(user_id, settings):
                     'max_spread': max_spread,
                     'min_buy': min_buy,
                     'max_buy': max_buy
+                },
+                'forecast_regional': {
+                    'max_volume': max_regional_volume,
+                    'max_price': max_regional_price,
+                    'start_region': start_region,
+                    'end_region': end_region
                 }
             }
         })
@@ -1629,6 +1823,20 @@ def insert_defaults(user_id, user_name):
             'forecast': True,
             'profiles': True,
             'market_browser': True
+        },
+        'forecast': {
+            'min_buy': 5000000,
+            'max_buy': 75000000,
+            'min_spread': 10,
+            'max_spread': 20,
+            'min_volume': 50,
+            'max_volume': 200
+        },
+        'forecast_regional': {
+            'max_volume': 100000,
+            'max_price': 1000000000,
+            'start_region': 10000043,
+            'end_region': 10000002
         }
     }
 
