@@ -755,13 +755,15 @@ def subscription_unsubscribe(user_id, settings):
         subscription_collection.find_and_modify({'user_id': user_id}, {
             '$set': {
                 'premium': False,
-                'subscription_date': None
+                'subscription_date': None,
+                'api_access': False
             }
         })
 
         settings_collection.find_and_modify({'user_id': user_id}, {
             '$set': {
                 'premium': False,
+                'api_access': False
             },
         })
 
