@@ -82,7 +82,7 @@ evesso = oauth.remote_app('evesso',
     authorize_url='https://login.eveonline.com/oauth/authorize'
 )
 app.config['SENTRY_CONFIG'] = {
-    'ignore_exceptions': [KeyboardInterrupt],
+    'ignore_exceptions': ['KeyboardInterrupt'],
 }
 sentry = Sentry(app, dsn='dsn')
 
