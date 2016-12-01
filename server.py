@@ -19,6 +19,7 @@ from werkzeug.security import gen_salt
 from pymongo import MongoClient, DESCENDING
 from bson import ObjectId
 from functools import wraps
+from raven.contrib.flask import Sentry
 
 try:
     import xml.etree.cElementTree as ET
@@ -80,6 +81,10 @@ evesso = oauth.remote_app('evesso',
     access_token_url='https://login.eveonline.com/oauth/token',
     authorize_url='https://login.eveonline.com/oauth/authorize'
 )
+app.config['SENTRY_CONFIG'] = {
+    'ignore_exceptions': [KeyboardInterrupt],
+}
+sentry = Sentry(app, dsn='dsn')
 
 # SDE
 market_ids = []
@@ -129,6 +134,7 @@ try:
     re = redis.StrictRedis(host=redis_host, port=6379, db=0)
 except:
     print("Redis server is unavailable")
+    sentry.captureException()
 
 # Decorator to validate a JWT and retrieve the users info from rethinkDB
 # Authorization types:
@@ -1393,6 +1399,7 @@ def apikey_add(user_id, settings):
         requests.post('http://localhost:4501/publish/audit', timeout=1)
     except:
         traceback.print_exc()
+        sentry.captureException()
 
     return jsonify({'message': 'API key has been added to your account'})
 
@@ -1443,6 +1450,7 @@ def apikey_remove(key_id, user_id, settings):
         requests.post('http://localhost:4501/publish/audit', timeout=1)
     except:
         traceback.print_exc()
+        sentry.captureException()
 
     return jsonify({'message': 'API key has been removed from your account'})
 
@@ -1473,6 +1481,7 @@ def apikey_get_one(key_id, user_id, settings):
                 return jsonify(key)
 
     except:
+        sentry.captureException()
         return jsonify({'message': 'There was a problem retrieving the API key. Please report this to Maxim Stride'})
 
     return jsonify({'message': 'Failed to find the requested API key. Make sure to use its unique ID in the request'})
@@ -1662,6 +1671,7 @@ def settings_savee(user_id, settings):
 
     except:
         traceback.print_exc()
+        sentry.captureException()
         return jsonify({'error': "There was a problem with parsing your settings", 'code': 400})
 
     try:
@@ -1955,6 +1965,7 @@ def do_deepstream_authorize():
                 if '_id' in settings_doc:
                     del settings_doc['_id']
             except:
+                sentry.captureException()
                 traceback.print_exc()
                 return 'Invalid credentials', 403
 
@@ -1974,6 +1985,7 @@ def do_deepstream_authorize():
     except jwt.exceptions.ExpiredSignatureError:
         return 'Session has expired', 403
     except:
+        sentry.captureException()
         traceback.print_exc()
         return 'Invalid credentials', 403
 
