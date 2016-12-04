@@ -84,7 +84,7 @@ evesso = oauth.remote_app('evesso',
 app.config['SENTRY_CONFIG'] = {
     'ignore_exceptions': ['KeyboardInterrupt'],
 }
-sentry = Sentry(app, dsn='dsn')
+sentry = Sentry(app, dsn='dsn' if env == 'production' else None)
 
 # SDE
 market_ids = []
@@ -767,8 +767,7 @@ def portfolio_delete(id, user_id, settings):
         if portfolio is None:
             raise Exception()
 
-    except Exception:
-        traceback.print_exc()
+    except:
         return jsonify({ 'error': "Failed to look up your portfolio. Double check that you have the correct portfolio ID", 'code': 400 })
 
     try:
@@ -805,8 +804,7 @@ def portfolio_get_single(id, user_id, settings):
         if portfolio is None:
             raise Exception()
 
-    except Exception:
-        traceback.print_exc()
+    except:
         return jsonify({ 'error': "Failed to look up your portfolio. Double check that you have the correct portfolio ID and that you have permissions for it", 'code': 400 })
 
     portfolio['time'] = portfolio.get('time', datetime.utcnow()).isoformat()
@@ -826,14 +824,109 @@ def portfolio_get_all(user_id, settings):
         if portfolios is None or len(portfolios) == 0:
             raise Exception()
 
-    except Exception:
-        traceback.print_exc()
+    except:
         return jsonify({ 'error': "Failed to look up your portfolios. Double check that you've created at least one portfolio", 'code': 400 })
 
     for p in portfolios:
         p['time'] = p.get('time', datetime.utcnow()).isoformat()
 
     return jsonify(portfolios)
+
+@app.route('/portfolio/get/<int:id>/multibuy', methods=['GET'])
+@verify_jwt
+def portfolio_get_multibuy(id, user_id, settings):
+
+    try:
+        portfolio = portfolio_collection.find_one({'user_id': user_id, 'portfolioID': id}, projection={'_id': False, 'hourlyChart': False, 'dailyChart': False})
+
+        if portfolio is None:
+            raise Exception()
+
+    except:
+        return jsonify({ 'error': "Failed to look up your portfolio. Double check that you have the correct portfolio ID and that you have permissions for it", 'code': 400 })
+
+    # Validation
+    try:
+        start_region = int(request.args.get('region', 10000002))
+        quantity = int(request.args.get('quantity', 1500))
+    except:
+        return jsonify({ 'error': "Invalid query parameters or missing parameter", 'code': 400 })
+
+    total_cost = 0
+    start_hub = regionToStationHub(start_region)
+    type_to_order_map = {}
+    type_to_component = {}
+    type_to_result = {}
+    components = portfolio.get('components', [])
+
+    pip = re.pipeline()
+
+    for component in components:
+        type_to_component[component['typeID']] = component
+
+        len = re.llen('ord_cnt:%s-%s' % (component['typeID'], start_region))
+
+        for k in re.lrange('ord_cnt:%s-%s' % (component['typeID'], start_region), 0, len):
+
+            pip.hmget('ord:%s' % k.decode('ascii'), ['volume', 'buy', 'price', 'stationID', 'type'])
+
+    rows = pip.execute()
+
+    for row in rows:
+
+        if row[1] == b'True':
+            continue
+
+        # Ignore orders outside the hub or in citadels
+        if int(row[3]) != start_hub and float(row[3]) < 1000000000000:
+            continue
+
+        if int(row[4]) not in type_to_order_map:
+            type_to_order_map[int(row[4])] = []
+
+        type_to_order_map[int(row[4])].append({
+            'volume': float(row[0]),
+            'price': float(row[2])
+        })
+
+    for _type in type_to_component:
+
+        cost = 0
+        orders = sorted(type_to_order_map[_type], key=lambda doc: doc['price']) if _type in type_to_order_map else []
+        volume_required = type_to_component[_type]['quantity'] * quantity
+        available = 0
+        type_to_result[_type] = {
+            'price': 0,
+            'defecit': 0,
+            'wanted': volume_required,
+            'available': 0
+        }
+
+        for order in orders:
+
+            available += order['volume']
+
+            if volume_required == 0:
+                continue
+
+            if order['volume'] > volume_required:
+                cost += order['price'] * volume_required
+                volume_required = 0
+            else:
+                volume_required -= order['volume']
+                cost += order['price'] * order['volume']
+
+        if volume_required > 0:
+            type_to_result[_type]['defecit'] = volume_required
+
+        type_to_result[_type]['price'] = cost
+        type_to_result[_type]['available'] = available
+        total_cost += cost
+
+    return jsonify({
+        'components': type_to_result,
+        'totalCost': total_cost
+    })
 
 @app.route('/subscription/subscribe', methods=['POST'])
 @verify_jwt
