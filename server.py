@@ -1906,7 +1906,7 @@ def insert_defaults(user_id, user_name):
 
     settings_doc = {
         'user_id': user_id,
-        'premium': False,
+        'premium': True,
         'api_key': str(ObjectId()),
         'profiles': [],
         'market': {
@@ -1983,10 +1983,10 @@ def insert_defaults(user_id, user_name):
 
     subscription_doc = {
         "user_id": user_id,
-        "premium": False,
+        "premium": True,
         "balance": 0,
         "history": [],
-        "subscription_date": None,
+        "subscription_date": datetime.utcnow() - timedelta(days=23),
         "user_name": user_name
     }
 
@@ -1994,7 +1994,7 @@ def insert_defaults(user_id, user_name):
         "user_id": user_id,
         "time": datetime.utcnow(),
         "read": False,
-        "message": "Welcome to EVE Exchange! Please report any problems you find to Maxim Stride or @maxim on Tweetfleet. Happy trading."
+        "message": "Welcome to EVE Exchange! A 7 day premium trial has been automatically activated. Any questions can be forwarded to Maxim Stride or @maxim on Tweetfleet. Happy trading."
     }
 
     audit = {
