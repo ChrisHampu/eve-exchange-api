@@ -874,11 +874,14 @@ def portfolio_get_multibuy(id, user_id, settings):
 
     for row in rows:
 
+        if row[0] == None or row[1] == None or row[2] == None or row[3] == None or row[4] == None:
+            continue
+
         if row[1] == b'True':
             continue
 
         # Ignore orders outside the hub or in citadels
-        if int(row[3]) != start_hub and float(row[3]) < 1000000000000:
+        if int(row[3]) != start_hub and int(row[3]) < 1000000000000:
             continue
 
         if int(row[4]) not in type_to_order_map:
