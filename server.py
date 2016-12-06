@@ -2071,7 +2071,12 @@ def do_deepstream_authorize():
             settings_doc = mongo_db.settings.find_one({'user_id': _data['user_id']})
             mongo_db.users.update({'_id': user_doc['_id']}, { '$set': { 'last_online': datetime.now()}})
 
-        requests.post('http://localhost:4501/user/login', json={'user_id': _data['user_id']}, timeout=1)
+        try:
+            requests.post('http://localhost:4501/user/login', json={'user_id': _data['user_id']}, timeout=1)
+        except:
+            sentry.captureException()
+            traceback.print_exc()
+            return 'There was a problem contacting the server', 400
 
         # ID object can't be serialized to json
         if '_id' in user_doc:
