@@ -282,12 +282,12 @@ def forecast(user_id, settings):
     pip = re.pipeline()
 
     for k in market_ids:
-        pip.hmget('dly:%s-%s' % (k, region), ['type', 'spread_sma', 'volume_sma', 'buyPercentile'])
+        pip.hmget('dly:%s-%s' % (k, region), ['type', 'spread_sma', 'volume_sma', 'buyPercentile', 'velocity'])
 
     docs = pip.execute()
 
     # Find ideal matches to query params
-    ideal = [doc[0] for doc in docs if doc[0] is not None and doc[1] is not None and doc[2] is not None and doc[3] is not None and float(doc[1]) >= minspread and float(doc[1]) <= maxspread and float(doc[2]) >= minvolume and float(doc[2]) <= maxvolume and float(doc[3]) >= minprice and float(doc[3]) <= maxprice ]
+    ideal = [doc[0] for doc in docs if doc[0] is not None and doc[1] is not None and doc[2] is not None and doc[3] is not None and doc[4] is not None and float(doc[1]) >= minspread and float(doc[1]) <= maxspread and float(doc[2]) >= minvolume and float(doc[2]) <= maxvolume and float(doc[3]) >= minprice and float(doc[3]) <= maxprice ]
 
     # Pull out complete documents for all ideal matches
     pip = re.pipeline()
@@ -296,7 +296,7 @@ def forecast(user_id, settings):
         pip.hgetall('dly:%s-%s' % (k.decode('ascii'), region))
 
     # Execute and grab only wanted attributes
-    docs = [{key.decode('ascii'):float(row[key]) for key in (b'type', b'spread', b'tradeVolume', b'buyPercentile', b'spread_sma', b'volume_sma', b'sellPercentile')} for row in pip.execute()]
+    docs = [{key.decode('ascii'):float(row[key]) for key in (b'type', b'spread', b'tradeVolume', b'buyPercentile', b'spread_sma', b'volume_sma', b'sellPercentile', b'velocity')} for row in pip.execute()]
 
     return jsonify(docs)
 
