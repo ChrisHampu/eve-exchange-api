@@ -1714,7 +1714,7 @@ def settings_savee(user_id, settings):
         min_volume = forecast_saved.get('min_volume', 50)
         max_volume = forecast_saved.get('max_volume', 200)
         min_spread = forecast_saved.get('min_spread', 10)
-        max_spread = forecast_saved.get('max_volume', 20)
+        max_spread = forecast_saved.get('max_spread', 20)
         min_buy = forecast_saved.get('min_buy', 5000000)
         max_buy = forecast_saved.get('max_buy', 75000000)
 
