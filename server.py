@@ -109,6 +109,7 @@ with open('sde/market_groups.js', 'r', encoding='utf-8') as f:
     def _getGroups(group, ids):
         if 'items' in group:
             ids.extend(_getItems(group['items']))
+
         for _group in group['childGroups']:
             _getGroups(_group, ids)
 
@@ -395,6 +396,10 @@ def forecast_region(user_id, settings):
         end_volume = end[end_index]['volume']
 
         while end_index < len(end) and start_index < len(start):
+
+            # Missing item id
+            if _type not in market_id_to_volume:
+                continue
 
             if end[end_index]['price'] - start[start_index]['price'] < min_profit:
                 break
@@ -1145,7 +1150,7 @@ def api_access_enable(user_id, settings):
                     'time': datetime.utcnow(),
                     'type': 1,
                     'amount': cost,
-                    'description': 'API access fee',
+                    'description': 'API access enabling fee',
                     'processed': True
                 }
             }
