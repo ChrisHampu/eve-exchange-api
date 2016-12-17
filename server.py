@@ -399,7 +399,7 @@ def forecast_region(user_id, settings):
 
             # Missing item id
             if _type not in market_id_to_volume:
-                continue
+                break
 
             if end[end_index]['price'] - start[start_index]['price'] < min_profit:
                 break
