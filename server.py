@@ -1979,6 +1979,15 @@ def insert_defaults(user_id, user_name):
         'profiles': []
     }
 
+    profit_chart = {
+        'frequency': 'hourly',
+        'broker': 0,
+        'time': datetime.utcnow(),
+        'taxes': 0,
+        'profit': 0,
+        'user_id': user_id
+    }
+
     subscription_doc = {
         "user_id": user_id,
         "premium": True,
@@ -2010,6 +2019,7 @@ def insert_defaults(user_id, user_name):
     mongo_db.subscription.insert(subscription_doc)
     mongo_db.notifications.insert(beta_notification)
     mongo_db.audit_log.insert(audit)
+    mongo_db.profit_chart.insert(profit_chart)
 
     # Publish the new account creation
     requests.post('http://localhost:4501/publish/subscription/%s' % user_id, timeout=1)
