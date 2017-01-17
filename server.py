@@ -1602,6 +1602,7 @@ def settings_savee(user_id, settings):
 
         region = market.get('region', 10000002)
         default_tab = market.get('default_tab', 0)
+        default_timespan = market.get('default_timespan', 0)
         simulation_broker_fee = market.get('simulation_broker_fee', 0)
         simulation_sales_tax = market.get('simulation_sales_tax', 0)
         simulation_margin = market.get('simulation_margin', 0)
@@ -1775,6 +1776,7 @@ def settings_savee(user_id, settings):
                 'market': {
                     'region': region,
                     'default_tab': default_tab,
+                    'default_timespan': default_timespan,
                     'simulation_broker_fee': simulation_broker_fee,
                     'simulation_sales_tax': simulation_sales_tax,
                     'simulation_margin': simulation_margin,
