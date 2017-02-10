@@ -1610,6 +1610,7 @@ def settings_savee(user_id, settings):
         simulation_margin_type = market.get('simulation_margin_type', 0)
         simulation_overhead = market.get('simulation_overhead', 0)
         simulation_wanted_profit = market.get('simulation_wanted_profit', 0)
+        ticker_watchlist = market.get('ticker_watchlist', [])
 
         if region not in supported_regions:
             return jsonify({'error': "Region is not a valid value", 'code': 400})
@@ -1638,6 +1639,9 @@ def settings_savee(user_id, settings):
 
         if (isinstance(simulation_wanted_profit, int) == False or isinstance(simulation_wanted_profit, float) == False) and 0 > simulation_wanted_profit > 100:
             return jsonify({'error': "Simulation Wanted Profit is not a valid value", 'code': 400})
+
+        if isinstance(ticker_watchlist, list) == False:
+            return jsonify({'error': "Ticker watchlist is not a valid list", 'code': 400})
 
         # General settings
         general = request.json.get('general', None)
@@ -1691,6 +1695,7 @@ def settings_savee(user_id, settings):
         market_browser = guidebook.get('market_browser', True)
         forecast = guidebook.get('forecast', True)
         portfolios = guidebook.get('portfolios', True)
+        tickers = guidebook.get('tickers', True)
         subscription = guidebook.get('subscription', True)
 
         if isinstance(disable, bool) == False:
@@ -1710,6 +1715,9 @@ def settings_savee(user_id, settings):
 
         if isinstance(subscription, bool) == False:
            subscription = False
+
+        if isinstance(tickers, bool) == False:
+           tickers = False
 
         # Forecast
         forecast_saved = request.json.get('forecast', None)
@@ -1783,7 +1791,8 @@ def settings_savee(user_id, settings):
                     'simulation_strategy': simulation_strategy,
                     'simulation_margin_type': simulation_margin_type,
                     'simulation_overhead': simulation_overhead,
-                    'simulation_wanted_profit': simulation_wanted_profit
+                    'simulation_wanted_profit': simulation_wanted_profit,
+                    'ticker_watchlist': ticker_watchlist
                 },
                 'general': {
                     'auto_renew': auto_renew
@@ -1801,7 +1810,8 @@ def settings_savee(user_id, settings):
                     'market_browser': market_browser,
                     'forecast': forecast,
                     'portfolios': portfolios,
-                    'subscription': subscription
+                    'subscription': subscription,
+                    'tickers': tickers
                 },
                 'forecast': {
                     'min_volume': min_volume,
