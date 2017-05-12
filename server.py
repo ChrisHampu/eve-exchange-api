@@ -1876,7 +1876,7 @@ def do_oauth_authorized():
 
     token = jwt.encode({'user_id': me.data['CharacterID'],
                         'user_name': me.data['CharacterName'],
-                        'exp': datetime.utcnow() + timedelta(hours=24)
+                        'exp': datetime.utcnow() + timedelta(days=7)
     }, auth_jwt_secret, algorithm='HS256')
 
     return redirect('%s/?token=%s' % (redirect_host, token.decode('ascii')), code=302)
