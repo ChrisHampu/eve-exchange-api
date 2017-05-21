@@ -31,6 +31,8 @@ etf_host = 'localhost'
 redis_host = 'localhost'
 redirect_host = os.environ.get('ETF_API_OAUTH_REDIRECT', 'http://localhost:3000')
 
+standard_headers = {'user_agent': 'https://eve.exchange'}
+
 mongo_client = MongoClient()
 
 mongo_db = mongo_client.eveexchange
@@ -45,6 +47,7 @@ aggregates_minutes = mongo_db.aggregates_minutes
 aggregates_hourly = mongo_db.aggregates_hourly
 aggregates_daily = mongo_db.aggregates_daily
 user_orders_collection = mongo_db.user_orders
+alerts_collection = mongo_db.alerts
 
 portfolio_limit = 100 # Max number of portfolios a user can have
 portfolio_component_limit = 25 # number of components per portfolio
@@ -122,7 +125,7 @@ with open('sde/market_id_to_volume.json', 'r', encoding='utf-8') as f:
     market_id_to_volume = dict({int(k):v for k,v in json.loads(market_id_to_volume_json).items()})
 
 try:
-    res = requests.get('https://crest-tq.eveonline.com/industry/systems/', timeout=10)
+    res = requests.get('https://crest-tq.eveonline.com/industry/systems/', timeout=10, headers=standard_headers)
 
     doc = json.loads(res.text)
 
@@ -1401,7 +1404,7 @@ def apikey_add(user_id, settings):
 
     # Grab key info from EVE and verify it matches
     try:
-        res = requests.get('https://api.eveonline.com/account/APIKeyInfo.xml.aspx?keyID=%s&vCode=%s' % (keyID, vCode), timeout=10)
+        res = requests.get('https://api.eveonline.com/account/APIKeyInfo.xml.aspx?keyID=%s&vCode=%s' % (keyID, vCode), timeout=10, headers=standard_headers)
 
         tree = ET.fromstring(res.text)
 
@@ -1772,6 +1775,21 @@ def settings_savee(user_id, settings):
         if end_region not in supported_regions:
             end_region = None
 
+        # Alerts
+        alerts_saved = request.json.get('alerts', None)
+
+        if alerts_saved is None:
+            return jsonify({'error': "There are important settings missing from your request", 'code': 400})
+
+        show_browser = alerts_saved.get('canShowBrowserNotification', True)
+        send_evemail = alerts_saved.get('canSendMailNotification', True)
+
+        if isinstance(show_browser, bool) == False:
+            show_browser = True
+
+        if isinstance(send_evemail, bool) == False:
+            send_evemail = True
+
     except:
         traceback.print_exc()
         sentry.captureException()
@@ -1826,6 +1844,10 @@ def settings_savee(user_id, settings):
                     'max_price': max_regional_price,
                     'start_region': start_region,
                     'end_region': end_region
+                },
+                'alerts': {
+                    'canShowBrowserNotification': show_browser,
+                    'canSendMailNotification': send_evemail
                 }
             }
         })
@@ -1833,6 +1855,185 @@ def settings_savee(user_id, settings):
         return jsonify({'error': "There was a problem with saving your settings", 'code': 400})
 
     return jsonify({'message': 'New settings have been applied'})
+
+@app.route('/alerts/create', methods=['POST'])
+@verify_jwt
+def create_alert(user_id, settings):
+
+    try:
+        if request.is_json == False:
+            return jsonify({'error': "Request Content-Type header must be set to 'application/json'", 'code': 400})
+
+    except:
+        return jsonify({ 'error': "There was a problem parsing your json request", 'code': 400 })
+
+    try:
+        req_options = {
+            'alertType': int,
+            'frequency': int
+        }
+
+        price_alert_options = {
+            'priceAlertPriceType': int,
+            'priceAlertComparator': int,
+            'priceAlertAmount': [int, float],
+            'priceAlertItemID': int,
+        }
+
+        if 'alertType' not in request.json:
+            return jsonify({ 'error': "Alert type is missing from your request", 'code': 400 })
+
+        alert_type = request.json['alertType']
+
+        if not isinstance(alert_type, int):
+            return jsonify({ 'error': "The following option is not the correct data type: alertType", 'code': 400 })
+        if alert_type < 0 or alert_type > 0:
+            return jsonify({ 'error': "The following option is missing from your request: alertType", 'code': 400 })
+
+        for k in req_options:
+            if k not in request.json:
+                return jsonify({ 'error': "The following option is missing from your request: %s" % k, 'code': 400 })
+            if not isinstance(request.json[k], req_options[k]):
+                return jsonify({ 'error': "The following option is not the correct data type: %s" % k, 'code': 400 })
+
+        if request.json['frequency'] > 720:
+            return jsonify({ 'error': "Alert frequency should be a lower number (in hours)", 'code': 400 })
+        if request.json['frequency'] < 0:
+            return jsonify({ 'error': "Alert frequency should not be a negative number", 'code': 400 })
+
+        if alert_type == 0:
+
+            for k in price_alert_options:
+                if k not in request.json:
+                    return jsonify({ 'error': "The following option is missing from your request: %s" % k, 'code': 400 })
+                if isinstance(price_alert_options[k], list):
+                    valid = next((x for x in price_alert_options[k] if isinstance(request.json[k], x)), False)
+                    if valid == False:
+                        return jsonify({ 'error': "The following option is not the correct data type: %s" % k, 'code': 400 })
+                else:
+                    if not isinstance(request.json[k], price_alert_options[k]):
+                        return jsonify({ 'error': "The following option is not the correct data type: %s" % k, 'code': 400 })
+
+            new_alert = {
+                **{k:request.json[k] for k in req_options.keys()},
+                **{k:request.json[k] for k in price_alert_options.keys()}
+            }
+
+            if new_alert['priceAlertPriceType'] < 0 or new_alert['priceAlertPriceType'] > 3:
+                return jsonify({ 'error': "Price alert type is invalid", 'code': 400 })
+            if new_alert['priceAlertComparator'] < 0 or new_alert['priceAlertComparator'] > 2:
+                return jsonify({ 'error': "Price comparator type is invalid", 'code': 400 })
+            if str(new_alert['priceAlertItemID']) not in market_ids:
+                return jsonify({ 'error': "Price alert item id is invalid", 'code': 400 })
+            if new_alert['priceAlertAmount'] == 0:
+                return jsonify({ 'error': "priceAlertAmount should not be 0", 'code': 400 })
+
+        elif alert_type == 1:
+            
+            print({k:request.json[k] for k in req_options.keys()})
+
+            for k in price_alert_options:
+                if k not in request.json:
+                    return jsonify({ 'error': "The following option is missing from your request: %s" % k, 'code': 400 })
+                if not isinstance(request.json[k], price_alert_options[k]):
+                    return jsonify({ 'error': "The following option is not the correct data type: %s" % k, 'code': 400 })
+
+            new_alert = {
+                **{k:request.json[k] for k in req_options.keys()},
+                **{k:request.json[k] for k in price_alert_options.keys()}
+            }
+
+        new_alert['user_id'] = user_id
+        new_alert['nextTrigger'] = datetime.utcnow()
+        new_alert['paused'] = False
+        new_alert['createdAt'] = datetime.utcnow()
+        new_alert['lastTrigger'] = None
+
+        alerts_collection.insert(new_alert)
+
+        requests.post('http://localhost:4501/publish/alerts/%s' % user_id, timeout=1)
+
+    except:
+        traceback.print_exc()
+        return jsonify({'error': "There was a problem with saving your alert", 'code': 400})
+
+    if new_alert:
+        new_alert['_id'] = str(new_alert['_id'])
+        return jsonify(new_alert)
+    
+    return jsonify({'error': "There was a problem with saving your alert", 'code': 400})
+
+@app.route('/alerts/toggle/<string:id>', methods=['GET'])
+@verify_jwt
+def alert_toggle(id, user_id, settings):
+
+    try:
+        alert = alerts_collection.find_one({'user_id': user_id, '_id': ObjectId(oid=id)})
+
+        if alert is None:
+            raise Exception()
+
+    except:
+        return jsonify({ 'error': "Failed to look up the requested alert", 'code': 400 })
+    
+    new_state = False if alert['paused'] == True else True
+
+    alerts_collection.find_and_modify({'user_id': user_id, '_id': ObjectId(oid=id)}, {
+        '$set': {
+            'paused': new_state
+        }
+    })
+
+    requests.post('http://localhost:4501/publish/alerts/%s' % user_id, timeout=1)
+
+    return jsonify({'message': "Alert %s is %s" % (id, 'now paused' if new_state == True else 'no longer paused')})
+
+@app.route('/alerts/reset/<string:id>', methods=['GET'])
+@verify_jwt
+def alert_reset(id, user_id, settings):
+
+    try:
+        alert = alerts_collection.find_one({'user_id': user_id, '_id': ObjectId(oid=id)})
+
+        if alert is None:
+            raise Exception()
+
+    except:
+        return jsonify({ 'error': "Failed to look up the requested alert", 'code': 400 })
+    
+    new_state = False if alert['paused'] == True else True
+
+    alerts_collection.find_and_modify({'user_id': user_id, '_id': ObjectId(oid=id)}, {
+        '$set': {
+            'nextTrigger': datetime.utcnow()
+        }
+    })
+
+    requests.post('http://localhost:4501/publish/alerts/%s' % user_id, timeout=1)
+
+    return jsonify({'message': "Alert delay has been reset"})
+
+@app.route('/alerts/remove/<string:id>', methods=['GET'])
+@verify_jwt
+def alert_remove(id, user_id, settings):
+
+    try:
+        alert = alerts_collection.find_one({'user_id': user_id, '_id': ObjectId(oid=id)})
+
+        if alert is None:
+            raise Exception()
+
+    except:
+        return jsonify({ 'error': "Failed to look up the requested alert", 'code': 400 })
+
+    try:
+        alerts_collection.remove({'user_id': user_id, '_id': ObjectId(oid=id)}, multi=False)
+    except:
+        return jsonify({ 'error': "There was a problem removing the given alert", 'code': 400 })
+
+    requests.post('http://localhost:4501/publish/alerts/%s' % user_id, timeout=1)
+
+    return jsonify({'message': "Alert %s has been removed" % id})
 
 # SDE - deprecated
 
@@ -1953,6 +2154,10 @@ def insert_defaults(user_id, user_name):
             'max_price': 1000000000,
             'start_region': 10000043,
             'end_region': 10000002
+        },
+        'alerts': {
+            'canShowBrowserNotification': True,
+            'canSendMailNotification': True
         }
     }
 
