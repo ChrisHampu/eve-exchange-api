@@ -1880,6 +1880,11 @@ def create_alert(user_id, settings):
             'priceAlertItemID': int,
         }
 
+        sales_alert_options = {
+            'salesAlertType': int,
+            'salesAlertProfile': int
+        }
+
         if 'alertType' not in request.json:
             return jsonify({ 'error': "Alert type is missing from your request", 'code': 400 })
 
@@ -1887,8 +1892,8 @@ def create_alert(user_id, settings):
 
         if not isinstance(alert_type, int):
             return jsonify({ 'error': "The following option is not the correct data type: alertType", 'code': 400 })
-        if alert_type < 0 or alert_type > 0:
-            return jsonify({ 'error': "The following option is missing from your request: alertType", 'code': 400 })
+        if alert_type < 0 or alert_type > 1:
+            return jsonify({ 'error': "The following option is missing from your request or is incorrect: alertType", 'code': 400 })
 
         for k in req_options:
             if k not in request.json:
@@ -1929,18 +1934,16 @@ def create_alert(user_id, settings):
                 return jsonify({ 'error': "priceAlertAmount should not be 0", 'code': 400 })
 
         elif alert_type == 1:
-            
-            print({k:request.json[k] for k in req_options.keys()})
 
-            for k in price_alert_options:
+            for k in sales_alert_options:
                 if k not in request.json:
                     return jsonify({ 'error': "The following option is missing from your request: %s" % k, 'code': 400 })
-                if not isinstance(request.json[k], price_alert_options[k]):
+                if not isinstance(request.json[k], sales_alert_options[k]):
                     return jsonify({ 'error': "The following option is not the correct data type: %s" % k, 'code': 400 })
 
             new_alert = {
                 **{k:request.json[k] for k in req_options.keys()},
-                **{k:request.json[k] for k in price_alert_options.keys()}
+                **{k:request.json[k] for k in sales_alert_options.keys()}
             }
 
         new_alert['user_id'] = user_id
