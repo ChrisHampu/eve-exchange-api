@@ -1954,7 +1954,19 @@ def create_alert(user_id, settings):
 
         alerts_collection.insert(new_alert)
 
+        audit = {
+            'user_id': user_id,
+            'target': alert_type,
+            'balance': new_alert['priceAlertItemID'] if alert_type == 0 else 0,
+            'action': 16,
+            'time': datetime.utcnow()
+        }
+
+        audit_log_collection.insert(audit)
+
         requests.post('http://localhost:4501/publish/alerts/%s' % user_id, timeout=1)
+        # Audit log
+        requests.post('http://localhost:4501/publish/audit', timeout=1)
 
     except:
         traceback.print_exc()
@@ -2031,6 +2043,19 @@ def alert_remove(id, user_id, settings):
 
     try:
         alerts_collection.remove({'user_id': user_id, '_id': ObjectId(oid=id)}, multi=False)
+
+        audit = {
+            'user_id': user_id,
+            'target': id,
+            'balance': 0,
+            'action': 17,
+            'time': datetime.utcnow()
+        }
+
+        audit_log_collection.insert(audit)
+
+        requests.post('http://localhost:4501/publish/audit', timeout=1)
+
     except:
         return jsonify({ 'error': "There was a problem removing the given alert", 'code': 400 })
 
